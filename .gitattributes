@@ -1,0 +1,29 @@
+# 统一换行符，避免 Windows/macOS 协作时产生整文件 diff
+* text=auto eol=lf
+
+# 源码显式声明
+*.c      text
+*.h      text
+*.ino    text
+*.vhd    text
+*.v      text
+*.qsf    text
+*.qpf    text
+*.md     text
+*.html   text
+
+# 二进制文件
+*.pdf    binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.webp   binary
+*.gif    binary
+*.docx   binary
+*.pptx   binary
+*.epro2  binary
+*.epru   binary
+*.hex    binary
+*.pof    binary
+*.jic    binary
+*.zip    binary
