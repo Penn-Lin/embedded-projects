@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>嵌入式项目集 · Penn Lin</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --card-hover: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --star: #e3b341;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 48px 20px 64px;
+  }
+
+  header { margin-bottom: 40px; }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
+  }
+
+  .sub {
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .tag {
+    font-size: 12px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 11px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .card {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: background .15s, border-color .15s, transform .15s;
+  }
+
+  .card:hover {
+    background: var(--card-hover);
+    border-color: #484f58;
+    transform: translateY(-2px);
+  }
+
+  .card-top {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .num {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 13px;
+    color: var(--accent);
+    opacity: .75;
+  }
+
+  .card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .stars {
+    color: var(--star);
+    font-size: 11px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .plat {
+    font-size: 13px;
+    color: var(--accent);
+    opacity: .85;
+    margin-bottom: 6px;
+  }
+
+  .desc {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 34px;
+    padding-top: 26px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    display: inline-block;
+    font-size: 13px;
+    text-decoration: none;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 14px;
+    transition: border-color .15s, background .15s;
+  }
+
+  .btn:hover { border-color: var(--accent); background: rgba(88,166,255,.08); }
+
+  footer {
+    margin-top: 30px;
+    font-size: 12px;
+    color: #6e7681;
+  }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 32px 16px 48px; }
+    h1 { font-size: 23px; }
+    .grid { grid-template-columns: 1fr; }
+    .card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>嵌入式项目集</h1>
+    <p class="sub">集美大学 通信工程 · 五个从 8 位裸机到 FPGA 的硬件项目</p>
+    <div class="meta">
+      <span class="tag">C / C++ / VHDL</span>
+      <span class="tag">PIC16F877A</span>
+      <span class="tag">ESP32</span>
+      <span class="tag">Cyclone IV</span>
+      <span class="tag">Arduino</span>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <a class="card" href="https://github.com/Penn-Lin/embedded-projects/tree/main/01-pic-autonomous-car">
+      <div class="card-top">
+        <span class="num">01</span>
+        <h2>自动行驶小车</h2>
+        <span class="stars">★★★</span>
+      </div>
+      <div class="plat">PIC16F877A · 4 MHz 裸机</div>
+      <div class="desc">场地只有弧线有黑线，直线段靠陀螺仪航向闭环。四档任务实测 3 / 12 / 13 / 56 秒。</div>
+    </a>
+
+    <a class="card" href="https://github.com/Penn-Lin/embedded-projects/tree/main/02-esp32-ferrofluid-speaker">
+      <div class="card-top">
+        <span class="num">02</span>
+        <h2>磁流体视觉蓝牙音响</h2>
+        <span class="stars">★★★</span>
+      </div>
+      <div class="plat">ESP32 双核 · 自研 PCB</div>
+      <div class="desc">原理图、双层板、焊接到固件全独立完成。音频能量实时驱动磁流体动画，约 20 FPS。</div>
+    </a>
+
+    <a class="card" href="https://github.com/Penn-Lin/embedded-projects/tree/main/03-fpga-dual-car">
+      <div class="card-top">
+        <span class="num">03</span>
+        <h2>双车循迹与跟随</h2>
+        <span class="stars">★★★</span>
+      </div>
+      <div class="plat">Cyclone IV · VHDL</div>
+      <div class="desc">五个模块顶层例化，红外脉冲同步启动、超声波四档跟随，四圈不串圈。</div>
+    </a>
+
+    <a class="card" href="https://github.com/Penn-Lin/embedded-projects/tree/main/04-arduino-gas-sampling">
+      <div class="card-top">
+        <span class="num">04</span>
+        <h2>气体检测采样单元</h2>
+        <span class="stars">★★</span>
+      </div>
+      <div class="plat">Arduino Nano</div>
+      <div class="desc">I2C 流量计自写 CRC8 校验与线性标定，非阻塞采样，手机可远程控制气泵与紫光灯。</div>
+    </a>
+
+    <a class="card" href="https://github.com/Penn-Lin/embedded-projects/tree/main/05-avr-oled-buzzer">
+      <div class="card-top">
+        <span class="num">05</span>
+        <h2>OLED 显示与蜂鸣器</h2>
+        <span class="stars">★★</span>
+      </div>
+      <div class="plat">Arduino UNO · AVR</div>
+      <div class="desc">大一的第一个完整项目。把位图与曲谱移入 Flash，解决 AVR 仅 2 KB SRAM 的溢出。</div>
+    </a>
+
+  </main>
+
+  <div class="links">
+    <a class="btn" href="notes/">代码精读笔记</a>
+    <a class="btn" href="https://github.com/Penn-Lin/embedded-projects">GitHub 仓库</a>
+    <a class="btn" href="https://github.com/Penn-Lin">@Penn-Lin</a>
+  </div>
+
+  <footer>
+    课程设计报告与文档仅作展示，请勿直接抄用。代码采用 MIT License。
+  </footer>
+
+</div>
+</body>
+</html>
