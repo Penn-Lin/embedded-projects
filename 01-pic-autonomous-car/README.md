@@ -33,7 +33,7 @@
 
 ## 软件架构
 
-七层结构，上层不碰寄存器：
+八层结构，上层不碰寄存器：
 
 ```
 交互层    key_scan()               按键短按/长按 → 启动任务
@@ -91,13 +91,12 @@
 ```
 src/       task1.c（1152 行）+ MPLAB X 工程与启动文件
 firmware/  task1.hex（可直接烧录）
-docs/      课程报告 PDF、任务书、评分表、开发板电路图、代码逐行精读页
+docs/      课程报告 PDF、任务书、评分表、开发板电路图
 docs/images/  报告内嵌图片（42 张）
 ```
 
 ## 文档
 
 - [课程设计报告（PDF，3.9 MB）](docs/report.pdf)
-- [task1.c 逐行精读（HTML）](docs/code-walkthrough.html)
 - [课程设计任务书](docs/课程设计任务书-自动行驶系统-通信24.pdf)
 - [评分标准](docs/24级微机课程设计--小车行驶系统评分.pdf)
