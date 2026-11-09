@@ -1,0 +1,2186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VHDL 五模块精读 · FPGA 双车循迹与跟随</title>
+<style>
+:root{
+  --bg:#0f1319; --panel:#161c24; --panel2:#1b222c; --panel3:#202934;
+  --line:#28313d; --line2:#3a4553;
+  --ink:#dde4ed; --ink2:#9ba8b7; --ink3:#697585;
+  --blue:#6aa9ff; --teal:#35d0ba; --violet:#c08cf5; --amber:#f2b25c;
+  --green:#9ad86a; --red:#ff7d7d;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,Menlo,"Courier New",monospace;
+  --sans:"Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+b,strong{color:#fff;font-weight:600}
+code{font:12.7px var(--mono);background:#1b222c;border:1px solid #2a3541;border-radius:4px;
+     padding:1px 5px;color:#a9e7da;white-space:nowrap}
+.v{color:#d7b6ff;font-family:var(--mono);font-size:.93em;background:#1d1a28;border:1px solid #3b2f50;
+   border-radius:4px;padding:0 4px}
+.fn{color:#9dc7ff;font-family:var(--mono);font-size:.93em;background:#182233;border:1px solid #2c3f5c;
+    border-radius:4px;padding:0 4px}
+.pm{color:#f7c98a;font-family:var(--mono);font-size:.93em;background:#26200f;border:1px solid #4d3d1d;
+    border-radius:4px;padding:0 4px}
+.reg{color:#ffb3b3;font-family:var(--mono);font-size:.93em}
+.hl-a{color:var(--amber)} .hl-g{color:var(--green)} .hl-r{color:var(--red)}
+.hl-v{color:var(--violet)} .hl-b{color:var(--blue)} .hl-t{color:var(--teal)}
+
+#pg{position:fixed;top:0;left:0;height:2px;width:0;background:linear-gradient(90deg,var(--teal),var(--blue),var(--violet));z-index:120}
+#top{position:fixed;top:0;left:0;right:0;height:54px;z-index:110;display:flex;align-items:center;gap:10px;
+     padding:0 14px;background:rgba(15,19,25,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+#burger{display:none;background:none;border:1px solid var(--line2);color:var(--ink2);border-radius:6px;
+        width:34px;height:30px;font-size:15px;cursor:pointer}
+.brand{font:600 13px/1 var(--sans);letter-spacing:.04em;color:var(--ink2);white-space:nowrap}
+.brand em{color:var(--teal);font-style:normal}
+.search{position:relative;flex:1;max-width:440px;margin-left:auto}
+.search input{width:100%;height:32px;background:var(--panel);border:1px solid var(--line2);border-radius:7px;
+              color:var(--ink);padding:0 10px 0 31px;font:13px var(--sans);outline:none}
+.search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #6aa9ff22}
+.search .ico{position:absolute;left:9px;top:9px;color:var(--ink3);pointer-events:none}
+#res{position:absolute;top:36px;left:0;right:0;background:var(--panel2);border:1px solid var(--line2);
+     border-radius:8px;max-height:340px;overflow:auto;display:none;box-shadow:0 16px 40px #000a}
+#res div{padding:7px 11px;font-size:13px;color:var(--ink2);cursor:pointer;border-bottom:1px solid #1c232c}
+#res div:hover,#res div.sel{background:#1e2836;color:var(--blue)}
+#res em{color:var(--blue);font-style:normal;font-size:11px;margin-right:6px}
+.tgl{height:32px;padding:0 12px;border-radius:7px;border:1px solid var(--line2);background:var(--panel);
+     color:var(--ink2);font:12px/1 var(--sans);cursor:pointer;white-space:nowrap}
+.tgl.on{border-color:var(--green);color:var(--green);background:#17251a}
+
+#side{position:fixed;top:54px;bottom:0;left:0;width:280px;overflow-y:auto;background:var(--bg);
+      border-right:1px solid var(--line);padding:16px 0 60px;z-index:100}
+#side h6{margin:0 0 8px;padding:0 18px;font:600 11px/1 var(--sans);letter-spacing:.14em;color:var(--ink3)}
+#side a{display:flex;gap:9px;padding:6px 18px;font-size:13.4px;color:var(--ink2);border-left:2px solid transparent;line-height:1.5}
+#side a i{font:11px var(--mono);color:var(--ink3);padding-top:3px;font-style:normal;flex:none}
+#side a:hover{background:#151b22;text-decoration:none;color:var(--ink)}
+#side a.on{color:#fff;background:#182230;border-left-color:var(--blue)}
+#side a.on i{color:var(--blue)}
+#side .grp{margin:14px 18px 6px;font:600 10.5px/1 var(--sans);letter-spacing:.1em;color:var(--ink3);
+           border-top:1px solid #1e252e;padding-top:9px}
+#side .meta{margin:16px 18px 0;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.8}
+#mask{display:none;position:fixed;inset:54px 0 0 0;background:#000a;z-index:99}
+
+#main{margin-left:280px;padding:54px 0 0}
+.wrap{max-width:900px;margin:0 auto;padding:32px 30px 150px}
+h1{font:600 31px/1.28 var(--sans);letter-spacing:-.01em;margin:6px 0 10px}
+.sub{color:var(--ink2);font-size:14.5px;margin:0 0 5px}
+.hero{border-bottom:1px solid var(--line);padding-bottom:20px}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);
+             background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:3px 11px 3px 8px}
+.legend b{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+section{padding:36px 0 12px;border-bottom:1px solid #1b222b;scroll-margin-top:64px}
+.sec-h{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.sec-h .num{font:700 11.5px/1 var(--mono);color:#0d1116;background:var(--sc,#6aa9ff);border-radius:5px;
+            padding:5px 7px;flex:none;letter-spacing:.02em}
+.sec-h h2{font:600 23px/1.35 var(--sans);margin:0;flex:1}
+.sec-h h2 small{display:block;font:400 12.5px/1.5 var(--sans);color:var(--ink3);margin-top:2px}
+.sec-h .fold{background:none;border:1px solid var(--line2);color:var(--ink3);border-radius:5px;
+             width:24px;height:22px;font:12px/1 var(--mono);cursor:pointer;flex:none}
+section.collapsed .sec-body{display:none}
+section.collapsed{padding-bottom:20px}
+.sec-body>*:first-child{margin-top:16px}
+#pitch{--sc:var(--violet)} #overview{--sc:var(--blue)} #top{--sc:var(--blue)}
+#scan{--sc:var(--teal)} #sonic{--sc:var(--teal)} #ir{--sc:var(--teal)}
+#logic{--sc:var(--amber)} #logicb{--sc:var(--amber)} #pwm{--sc:var(--teal)}
+#walk{--sc:var(--green)} #bugs{--sc:var(--red)} #qa{--sc:var(--blue)}
+#pit{--sc:var(--red)} #test{--sc:var(--red)}
+
+p,li{max-width:76ch}
+p{margin:11px 0}
+ul,ol{padding-left:22px;margin:11px 0}
+li{margin:6px 0}
+
+.oneline{font-size:16.5px;line-height:1.72;margin:16px 0 6px;padding:12px 16px;border-radius:8px;
+         background:linear-gradient(90deg,#1a2430,#151b22);border-left:3px solid var(--sc,#6aa9ff);color:#e9eff7}
+.oneline b{color:#fff}
+
+.blk{margin:18px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.blk>h4{margin:0;padding:9px 14px;background:#141a22;border-bottom:1px solid var(--line);
+        font:600 12px/1 var(--sans);letter-spacing:.08em;color:var(--ink2);display:flex;align-items:center;gap:8px}
+.blk>h4::before{content:"";width:5px;height:13px;border-radius:2px;background:var(--sc,#6aa9ff)}
+.blk .in{padding:13px 16px 15px}
+.blk .in>*:first-child{margin-top:0}
+.blk .in>*:last-child{margin-bottom:0}
+
+.layer{display:grid;gap:10px}
+.layer>div{padding:11px 14px;border-radius:8px;background:#141a22;border-left:2px solid #3a4553}
+.layer>div:nth-child(1){border-left-color:var(--blue)}
+.layer>div:nth-child(2){border-left-color:var(--teal)}
+.layer>div:nth-child(3){border-left-color:var(--amber)}
+.layer .lb{display:block;font:700 10.5px/1 var(--sans);letter-spacing:.1em;color:var(--ink3);margin-bottom:6px}
+.layer>div:nth-child(1) .lb{color:var(--blue)}
+.layer>div:nth-child(2) .lb{color:var(--teal)}
+.layer>div:nth-child(3) .lb{color:var(--amber)}
+.layer p{margin:0;font-size:14.5px;line-height:1.78}
+
+.cal{margin:14px 0;padding:11px 15px;border-radius:8px;font-size:14.2px;line-height:1.75;
+     background:#141a22;border:1px solid #232c37;border-left:3px solid var(--ink3);color:#c6d0dc}
+.cal b{color:#fff}
+.cal .t{display:inline-block;font:700 10.5px/1 var(--sans);letter-spacing:.08em;margin-right:8px;
+        padding:3px 6px;border-radius:4px;vertical-align:1px;color:#0f1319}
+.cal.def{border-left-color:var(--blue)} .cal.def .t{background:var(--blue)}
+.cal.warn{border-left-color:var(--red);background:#1d1517} .cal.warn .t{background:var(--red)}
+.cal.good{border-left-color:var(--green);background:#16211a} .cal.good .t{background:var(--green)}
+.cal.tip{border-left-color:var(--amber);background:#221d14} .cal.tip .t{background:var(--amber)}
+.cal.irq{border-left-color:var(--violet);background:#1c1a26} .cal.irq .t{background:var(--violet)}
+
+.code{margin:14px 0;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#0b0f14}
+.code-h{display:flex;align-items:center;gap:10px;padding:6px 10px 6px 13px;background:#10161d;
+        border-bottom:1px solid #1d242d;font:11.5px var(--mono);color:var(--ink3)}
+.code-h .nm{color:#7fd6c4}
+.code-h .rg{color:var(--amber);opacity:.85}
+.code-h .sp{flex:1}
+.copy{background:#171f28;border:1px solid var(--line2);color:var(--ink2);border-radius:5px;
+      font:11px var(--mono);padding:3px 9px;cursor:pointer}
+.copy:hover{color:var(--teal);border-color:var(--teal)}
+.copy.ok{color:var(--green);border-color:var(--green)}
+.code pre{margin:0;overflow-x:auto;padding:11px 0}
+.code code{display:block;font:12.6px/1.66 var(--mono);white-space:pre;color:#c9d4e0;tab-size:4;
+           background:none;border:0;padding:0;white-space:pre}
+.code .l{display:block;padding-right:16px}
+.code .n{display:inline-block;width:42px;text-align:right;padding-right:12px;color:#3e4956;
+         user-select:none;-webkit-user-select:none}
+.k{color:#35d0ba}
+.t{color:#8fd0e8}
+.c{color:#57636f;font-style:italic}
+.s{color:#a9c9a0}
+.p{color:#c08cf5}
+.n2{color:#e0c07a}
+.mk{color:#ff9d5c;font-weight:700}
+
+.anno{margin:6px 0 2px;padding:0;list-style:none;counter-reset:a}
+.anno li{position:relative;padding:5px 0 5px 30px;font-size:14.2px;line-height:1.75;color:#c6d0dc;max-width:76ch}
+.anno li::before{counter-increment:a;content:counter(a);position:absolute;left:0;top:7px;width:19px;height:19px;
+                 border-radius:50%;background:#26200f;border:1px solid #4d3d1d;color:var(--amber);
+                 font:700 11px/18px var(--mono);text-align:center}
+.anno li b{color:#fff}
+
+.calc{margin:12px 0;padding:11px 14px;border-radius:8px;background:#12161c;border:1px dashed #4d3d1d;
+      font:12.6px/1.95 var(--mono);color:#e8d5b0;white-space:pre;overflow-x:auto}
+.calc .r{color:var(--amber);font-weight:700}
+.calc .d{color:#7d8794}
+
+.tblwrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:9px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+th,td{padding:8px 11px;text-align:left;border-bottom:1px solid #1e252e;vertical-align:top;line-height:1.65}
+th{background:#141a22;color:var(--ink2);font:600 11.5px/1.35 var(--sans);letter-spacing:.05em;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.mono{font:12.4px var(--mono);color:#a9e7da;white-space:nowrap}
+td.blue{color:#9dc7ff} td.amber{color:#f7c98a} td.violet{color:#d7b6ff} td.red{color:#ffb3b3} td.green{color:#bfe49a} td.teal{color:#7fe3d1}
+.pit li{font-size:14.3px;color:#cbd5e1;line-height:1.75}
+tbody tr:hover{background:#151b23}
+.star{color:var(--amber);letter-spacing:1px;font-size:11px}
+
+.fig{margin:18px 0;padding:14px 10px 6px;border:1px solid var(--line);border-radius:10px;background:#121821}
+.fig svg{display:block;width:100%;height:auto}
+.fig figcaption{font-size:12.5px;color:var(--ink3);text-align:center;padding:8px 10px 2px;line-height:1.65}
+.fig svg text{font-family:var(--sans)}
+.fig svg .mn{font-family:var(--mono)}
+.fig svg .t1{fill:#dde4ed;font-size:13px}
+.fig svg .t2{fill:#8b97a5;font-size:11.5px}
+.fig svg .t3{fill:#697585;font-size:10.5px}
+.fig svg .ar{stroke:#46515f;stroke-width:1.2;fill:none}
+.fig svg .ard{stroke:#6aa9ff;stroke-width:1.2;fill:none;stroke-dasharray:4 4}
+
+.tline{position:relative;margin:18px 0 6px;padding-left:26px}
+.tline::before{content:"";position:absolute;left:7px;top:8px;bottom:8px;width:2px;
+               background:linear-gradient(180deg,var(--teal),var(--blue),var(--violet),var(--amber))}
+.tline .st{position:relative;margin:0 0 14px}
+.tline .st::before{content:"";position:absolute;left:-24px;top:7px;width:9px;height:9px;border-radius:50%;
+                   background:var(--bg);border:2px solid var(--blue)}
+.tline .st.t::before{border-color:var(--teal)} .tline .st.v::before{border-color:var(--violet)}
+.tline .st.a::before{border-color:var(--amber)} .tline .st.g::before{border-color:var(--green)}
+.tline .st.r::before{border-color:var(--red)}
+.tline b{display:block;font-size:14.5px;color:#fff;margin-bottom:2px}
+.tline p{margin:0;font-size:14px;color:#c2ccd8}
+
+.grid{display:grid;gap:10px;margin:14px 0}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.cd{padding:11px 14px;border-radius:9px;background:#141a22;border:1px solid #232c37;border-top:2px solid var(--sc,#6aa9ff)}
+.cd h5{margin:0 0 5px;font:600 13.8px/1.4 var(--sans);color:#fff}
+.cd p{margin:0;font-size:13.6px;color:#bcc7d4;line-height:1.7;max-width:none}
+.cd.c1{--sc:var(--teal)} .cd.c2{--sc:var(--blue)} .cd.c3{--sc:var(--amber)}
+.cd.c4{--sc:var(--violet)} .cd.c5{--sc:var(--green)} .cd.c6{--sc:var(--red)}
+
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:12px 0;font:12.2px var(--mono)}
+.chain i{color:var(--ink3);font-style:normal}
+.chain span{background:#182230;border:1px solid #2b3a4d;border-radius:5px;padding:3px 8px;color:#a9c9e0}
+.chain span.hot{border-color:var(--amber);color:#f7c98a}
+
+.qa{display:grid;gap:9px;margin:15px 0}
+.qi{padding:10px 13px;border-radius:8px;background:#151c24;border:1px solid #232c37;border-left:2px solid var(--blue)}
+.qi .q{margin:0 0 4px;font-size:14.6px;color:#eaf0f7;max-width:none;line-height:1.65}
+.qi .q::before{content:"问";font:700 10.5px var(--mono);color:var(--blue);border:1px solid #2c3f5c;
+               border-radius:3px;padding:1px 4px;margin-right:8px;vertical-align:2px}
+.qi .a{margin:0;font-size:14.2px;color:#c2ccd8;max-width:none;line-height:1.72}
+.qi .a::before{content:"答";font:700 10.5px var(--mono);color:var(--teal);border:1px solid #2b4a45;
+               border-radius:3px;padding:1px 4px;margin-right:8px;vertical-align:2px}
+
+.cards{display:grid;gap:10px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:9px;background:var(--panel);overflow:hidden}
+.card>button{width:100%;text-align:left;background:none;border:0;color:var(--ink);cursor:pointer;
+             padding:12px 14px;font:15px/1.5 var(--sans);display:flex;gap:10px;align-items:flex-start}
+.card>button:hover{background:#1a222c}
+.card>button .ix{font:700 11px var(--mono);color:var(--blue);padding-top:4px;flex:none}
+.card>button .arw{margin-left:auto;color:var(--ink3);font:14px var(--mono);flex:none}
+.card.open > button .arw{color:var(--green)}
+.card .body{padding:0 14px 14px 38px;display:none}
+.card.open .body{display:block}
+.card .body dl{margin:0;display:grid;gap:9px}
+.card .body dt{font:700 10.5px/1 var(--sans);letter-spacing:.09em;color:var(--amber);margin-bottom:4px}
+.card .body dt:nth-of-type(2){color:var(--violet)}
+.card .body dt:nth-of-type(3){color:var(--teal)}
+.card .body dd{margin:0;font-size:14.2px;color:#c6d0dc;line-height:1.75}
+
+.tests{display:grid;gap:10px;margin:16px 0}
+.tt{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:11px 14px}
+.tt>p{margin:0 0 6px;font-size:14.8px;max-width:none}
+.tt>p::before{content:"Q";font:700 11px var(--mono);color:var(--red);margin-right:8px;
+              border:1px solid #5a2a2a;border-radius:3px;padding:0 4px;vertical-align:2px}
+.tt button{background:#171f28;border:1px solid var(--line2);color:var(--ink2);border-radius:5px;
+           font:11.5px var(--sans);padding:3px 10px;cursor:pointer}
+.tt button:hover{color:var(--green);border-color:var(--green)}
+.tt .ans{display:none;margin-top:9px;padding-top:9px;border-top:1px dashed #2c3540;font-size:14.2px;color:#c6d0dc}
+.tt.open .ans{display:block}
+.tt .ans p{margin:6px 0;max-width:72ch}
+
+details.deep{margin:14px 0;border:1px solid #322a44;border-radius:9px;background:#181622;overflow:hidden}
+details.deep>summary{padding:10px 14px;cursor:pointer;font:600 13.2px/1.4 var(--sans);color:#d7b6ff;list-style:none}
+details.deep>summary::-webkit-details-marker{display:none}
+details.deep>summary::before{content:"▸ ";color:var(--violet)}
+details.deep[open]>summary::before{content:"▾ "}
+details.deep .din{padding:2px 15px 14px;font-size:14.2px;color:#c2ccd8}
+details.deep .din>*:first-child{margin-top:0}
+
+.snap{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:10px 0;font:12.4px/1.7 var(--mono)}
+.snap div{padding:5px 10px;border-bottom:1px solid #1e252e;color:#a9e7da}
+.snap div:nth-child(odd){background:#131920;color:#7d8794}
+.snap div b{color:#fff}
+
+footer{padding:36px 0 0;color:var(--ink3);font-size:12.6px;line-height:1.9}
+footer p{max-width:78ch}
+
+/* ===== v3 新增 ===== */
+.pitch{display:grid;grid-template-columns:1fr 1.55fr;gap:12px;margin:16px 0}
+.pitch>div{border-radius:10px;padding:14px 16px;border:1px solid var(--line)}
+.pitch .p30{background:linear-gradient(135deg,#152238,#101826);border-color:#2c3f5c}
+.pitch .p120{background:#131a24}
+.pitch h5{margin:0 0 8px;font:700 12px/1 var(--sans);letter-spacing:.1em}
+.pitch .p30 h5{color:var(--blue)} .pitch .p120 h5{color:var(--teal)}
+.pitch p{margin:0;font-size:14.6px;line-height:1.85;max-width:none;color:#dbe3ec}
+.pitch .role{margin-top:10px;padding-top:10px;border-top:1px dashed #2c3540;font-size:13px;color:var(--ink2);line-height:1.7}
+
+.chainq{margin:14px 0;border:1px solid #322a44;border-radius:10px;overflow:hidden;background:#151321}
+.chainq>h4{margin:0;padding:10px 14px;font:600 13.4px/1.4 var(--sans);color:#e6dcf8;background:#181622;
+          border-bottom:1px solid #2a2438;display:flex;align-items:center;gap:8px}
+.chainq>h4::before{content:"⛓";font-size:12px}
+.chainq ol{margin:0;padding:11px 14px 13px 38px}
+.chainq li{margin:9px 0;font-size:14.2px;color:#c6d0dc;line-height:1.75}
+.chainq li b{color:#b79aff}
+.chainq .lvl{font:700 10px var(--mono);color:var(--violet);border:1px solid #3b2f50;border-radius:3px;
+             padding:1px 5px;margin-right:7px;vertical-align:2px}
+
+.growth{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:30px 0 8px}
+.growth a{display:block;padding:13px 16px;border-radius:10px;border:1px solid var(--line);
+          background:var(--panel);color:var(--ink2);text-decoration:none}
+.growth a:hover{border-color:var(--blue);background:#182230}
+.growth .dir{font:700 10.5px var(--mono);letter-spacing:.12em;color:var(--ink3)}
+.growth a b{display:block;font-size:14.5px;color:var(--ink);margin-top:3px;font-weight:600}
+.growth a:hover b{color:var(--blue)}
+.growth .single{grid-column:1/-1;text-align:center}
+
+body.io .io-hide{display:none!important}
+body.io .snap,body.io .tline,body.io .grid,body.io .calc,body.io .chain,body.io .cd{display:none!important}
+body.io h3{display:none!important}
+body.io .sec-body>p:not(.oneline){display:none!important}
+body.io section{padding:26px 0 8px}
+
+@media (max-width:1000px){
+  #burger{display:block}
+  #side{transform:translateX(-100%);transition:transform .22s ease;width:284px;box-shadow:0 0 40px #000}
+  #side.open{transform:none}
+  #mask.show{display:block}
+  #main{margin-left:0}
+  .wrap{padding:22px 17px 120px}
+  h1{font-size:24px}
+  .sec-h h2{font-size:19.5px}
+  .brand{display:none}
+  .search{max-width:none}
+  .g2,.g3{grid-template-columns:1fr}
+  .code code{font-size:12px}
+  .code .n{width:33px;padding-right:8px}
+  .snap{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .tgl{padding:0 9px;font-size:11px}
+  p,li{max-width:none}
+  .pitch{grid-template-columns:1fr}
+  .growth{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="pg"></div>
+
+<div id="top">
+  <button id="burger" aria-label="目录">≡</button>
+  <div class="brand">smart_car.vhd · <em>FPGA 50 MHz</em></div>
+  <div class="search">
+    <svg class="ico" width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.6" cy="6.6" r="4.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10.1 10.1 L14.2 14.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    <input id="q" type="search" placeholder="搜：信号、圈数、亚稳态、294、state_lap…" autocomplete="off">
+    <div id="res"></div>
+  </div>
+  <button class="tgl" id="io">只看面试题</button>
+</div>
+
+<nav id="side">
+  <h6>阅读路线</h6>
+  <div class="grp">先会讲</div>
+  <a href="#pitch"><i>00</i>开场：怎么讲这个项目</a>
+  <div class="grp">先看全局</div>
+  <a href="#overview"><i>01</i>没有 CPU 的世界怎么决策</a>
+  <a href="#top"><i>02</i>顶层：例化即集成</a>
+  <div class="grp">五个模块</div>
+  <a href="#scan"><i>03</i>灰度扫描 sensor_scanner</a>
+  <a href="#sonic"><i>04</i>超声测距 hc_sr04</a>
+  <a href="#ir"><i>05</i>红外握手 ir_sync</a>
+  <a href="#logic"><i>06</i>决策上：状态机与圈数</a>
+  <a href="#logicb"><i>07</i>决策下：循迹与跟随</a>
+  <a href="#pwm"><i>08</i>motor_pwm 与蜂鸣器</a>
+  <div class="grp">串起来</div>
+  <a href="#walk"><i>09</i>双车协同全程推演</a>
+  <a href="#bugs"><i>10</i>代码里的五个真问题</a>
+  <div class="grp">备考</div>
+  <a href="#qa"><i>11</i>面试专题 12 问</a>
+  <a href="#pit"><i>12</i>易错点清单</a>
+  <a href="#test"><i>13</i>自测 8 题</a>
+  <div class="meta">
+    6 个 VHDL 文件 · 约 700 行<br>
+    50 MHz 单时钟域 · 无 CPU · 无中断<br>
+    <span style="color:var(--teal)">行号与源文件原文一致</span>
+  </div>
+</nav>
+<div id="mask"></div>
+
+<main id="main">
+<div class="wrap">
+
+<div class="hero">
+  <div style="font:700 11px var(--mono);color:var(--teal);letter-spacing:.14em">CODE WALKTHROUGH · 6 VHDL FILES</div>
+  <h1>没有 CPU，谁来拍板</h1>
+  <p class="sub">FPGA · 50 MHz 单时钟域 · VHDL · 数电课设团队项目 · 你负责决策模块 tracking_logic、顶层集成与总体逻辑设计</p>
+  <p class="sub" style="color:var(--ink3)">两辆小车用同一套逻辑：领车按键出发，跟车靠红外脉冲同步起步，然后按超声波距离四档跟随。这一页按"先看全局 → 逐个模块 → 串回两车协同"的顺序精读全部源码。</p>
+  <div class="legend">
+    <span><b style="background:var(--blue)"></b>结构 / 连线</span>
+    <span><b style="background:var(--teal)"></b>时序 / 波形</span>
+    <span><b style="background:var(--violet)"></b>信号 / 并发</span>
+    <span><b style="background:var(--amber)"></b>控制 / 推导</span>
+    <span><b style="background:var(--green)"></b>流程 / 结论</span>
+    <span><b style="background:var(--red)"></b>坑 / 隐患</span>
+  </div>
+</div>
+
+<!-- ============ 00 开场 ============ -->
+<section id="pitch">
+  <div class="sec-h"><span class="num">00</span><h2>开场：怎么把这个项目讲出去<small>面试前 30 秒定生死：先给脚本，再谈细节</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <div class="pitch">
+      <div class="p30">
+        <h5>30 秒 · 电梯版</h5>
+        <p>数电课设团队项目，两辆车用同一套 VHDL 逻辑做协同：领车按键启动时发一串红外脉冲，跟车收到立刻起步；之后跟车一边循迹、一边用超声波测与前车的距离，分四档调速跟随。圈数计数用"全黑持续 15 ms 确认 + 1 s 冷却 + 圈内锁存"三重条件，四圈不串圈。我负责决策模块 <code>tracking_logic</code> 和顶层集成。整个系统在 50 MHz 单时钟域内闭环，<b>没有 CPU、没有软件、没有中断——所有决策都是时钟沿上算出来的</b>。</p>
+        <div class="role"><b>角色边界</b>：决策模块 tracking_logic（约 240 行）、顶层 smart_car 的例化与连线、蜂鸣器逻辑、总体架构划分是我写的；扫描、超声、红外、PWM 四个外设模块由组员按接口定义实现（接口划分推断为我提出，按实际讲）。</div>
+      </div>
+      <div class="p120">
+        <h5>2 分钟 · STAR 版</h5>
+        <p><b>S</b>｜两辆车既要同步起步（人工喊口令不齐），又要在跑动中保持距离——不撞前车、也不被甩掉。<b>T</b>｜各自沿黑线跑满四圈，圈数不能多计；跟随区间 60–400 mm 稳定调速；跑完停车鸣笛一次。<b>A</b>｜四件事：①把系统拆成扫描、测距、红外、决策、PWM 五个模块，顶层只做例化连线，每个模块可单独仿真替换；②<b>圈数三重条件</b>防串圈——15 ms 持续确认、1 s 冷却、圈内锁存；③循迹用 8 路状态直接查表，全白时"记忆上次转向方向"扛过丢线；④跟随按距离四档（&gt;400 回正常 / 200–400 加速 / 100–200 正常 / &lt;100 减速 / &lt;60 停车），因为超声读数噪声大，分档比连续 PID 稳。<b>R</b>｜两车协同启动、四圈计数不串圈、稳定跟随、停车蜂鸣一次不重复。遗留：路口锁定时间是固定值，车速变了要重调；循迹只有分档差速，没有连续偏差控制。</p>
+      </div>
+    </div>
+
+    <div class="cal tip"><span class="t">讲法提醒</span>这个项目的面试价值在于<b>"硬件思维和软件思维的差别"</b>：单片机是逐条执行，FPGA 是同时存在。所有"等一会儿"都是计数器不是延时函数，所有"分支"都是并行硬件。先立住这个反差，再讲模块——面试官会自己往下问。</div>
+
+  </div>
+</section>
+
+<!-- ============ 01 全局 ============ -->
+<section id="overview">
+  <div class="sec-h"><span class="num">01</span><h2>没有 CPU 的世界怎么决策<small>建立整体印象：同时存在的五块逻辑 + 一条时钟节拍</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">单片机项目读代码是读"执行顺序"；这个项目读代码是读"<b>谁连着谁</b>"——五个模块在同一个 50 MHz 时钟下<b>同时、永远、反复地</b>算各自的输出，决策模块每个时钟沿都重新给一次左右轮速度。</p>
+
+    <div class="grid g3 io-hide">
+      <div class="cd c2"><h5>从结构看</h5><p>顶层 <code>smart_car.vhd</code> 只做两件事：声明六个 component、把它们端口连起来。功能全部在子模块里，<b>顶层 0 行业务逻辑</b>（蜂鸣器除外，它写在顶层）。</p></div>
+      <div class="cd c1"><h5>从时间看</h5><p>整个系统只有一个节拍：50 MHz 时钟沿。<b>没有调度、没有优先级</b>——"慢"不是靠等待，是靠计数器数够时钟数（15 ms = 750000 个周期）。</p></div>
+      <div class="cd c3"><h5>从角色看</h5><p><code>tracking_logic</code> 是唯一"做决定"的模块：输入 8 路线状态 + 距离 + 启动信号，输出左右轮速度 0–100。其余四个模块都只管一件事：把物理世界的量变成数字。</p></div>
+    </div>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">一、两车怎么配合：一张图看全程</h3>
+
+    <figure class="fig io-hide">
+    <svg viewBox="0 0 680 372" role="img" aria-label="双车协同系统框图">
+      <defs>
+        <marker id="q1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#46515f"/></marker>
+        <marker id="q2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#35d0ba"/></marker>
+        <marker id="q3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f2b25c"/></marker>
+      </defs>
+
+      <rect x="16" y="24" width="180" height="330" rx="10" fill="#131b26" stroke="#6aa9ff" stroke-dasharray="5 4"/>
+      <text class="t1" x="106" y="48" text-anchor="middle">领车（按键启动）</text>
+
+      <rect x="484" y="24" width="180" height="330" rx="10" fill="#131b26" stroke="#35d0ba" stroke-dasharray="5 4"/>
+      <text class="t1" x="574" y="48" text-anchor="middle">跟车（红外启动）</text>
+
+      <rect x="36" y="66" width="140" height="52" rx="8" fill="#1a2230" stroke="#3a4553"/>
+      <text class="t2" x="106" y="86" text-anchor="middle">按键 → 20 ms 防抖</text>
+      <text class="t3" x="106" y="103" text-anchor="middle">state_lap 0 → 1</text>
+
+      <rect x="36" y="150" width="140" height="56" rx="8" fill="#12211f" stroke="#35d0ba"/>
+      <text class="t2" x="106" y="171" text-anchor="middle">ir_sync 发送</text>
+      <text class="t3" x="106" y="188" text-anchor="middle">38 kHz 载波 9 ms</text>
+
+      <rect x="36" y="262" width="140" height="66" rx="8" fill="#1a2230" stroke="#3a4553"/>
+      <text class="t2" x="106" y="284" text-anchor="middle">循迹 + 圈数计数</text>
+      <text class="t3" x="106" y="301" text-anchor="middle">四圈跑完停车</text>
+      <text class="t3" x="106" y="317" text-anchor="middle">蜂鸣器响 1 秒</text>
+
+      <path d="M176 178 C 300 150, 380 160, 484 178" fill="none" stroke="#35d0ba" stroke-width="2" marker-end="url(#q2)"/>
+      <text class="t2" x="330" y="162" text-anchor="middle" style="fill:#7fe3d1">红外脉冲 · 空中传播</text>
+
+      <rect x="504" y="66" width="140" height="56" rx="8" fill="#12211f" stroke="#35d0ba"/>
+      <text class="t2" x="574" y="86" text-anchor="middle">ir_sync 接收判决</text>
+      <text class="t3" x="574" y="103" text-anchor="middle">低电平 &gt; 2 ms → 启动</text>
+
+      <rect x="504" y="150" width="140" height="56" rx="8" fill="#241d12" stroke="#f2b25c"/>
+      <text class="t2" x="574" y="171" text-anchor="middle">hc_sr04 测距</text>
+      <text class="t3" x="574" y="188" text-anchor="middle">每 20 ms 一测</text>
+
+      <rect x="504" y="262" width="140" height="66" rx="8" fill="#1a2230" stroke="#3a4553"/>
+      <text class="t2" x="574" y="284" text-anchor="middle">循迹 + 四档跟随</text>
+      <text class="t3" x="574" y="301" text-anchor="middle">&lt;60 停 / &lt;100 慢</text>
+      <text class="t3" x="574" y="317" text-anchor="middle">100–200 常态 / &gt;200 追</text>
+
+      <path d="M574 122 V 148" fill="none" stroke="#46515f" stroke-width="1.6" marker-end="url(#q1)"/>
+      <path d="M574 208 V 260" fill="none" stroke="#46515f" stroke-width="1.6" marker-end="url(#q1)"/>
+      <path d="M106 120 V 148" fill="none" stroke="#46515f" stroke-width="1.6" marker-end="url(#q1)"/>
+      <path d="M106 208 V 260" fill="none" stroke="#46515f" stroke-width="1.6" marker-end="url(#q1)"/>
+
+      <path d="M160 336 C 280 372, 400 372, 520 336" fill="none" stroke="#f2b25c" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#q3)"/>
+      <text class="t3" x="340" y="366" text-anchor="middle" style="fill:#f7c98a">超声波：距离 60–400 mm 内四档调速</text>
+    </svg>
+    <figcaption>两辆车烧同一套 bit 流，"谁是领车"只由谁先按按键决定。红外握手只有启动时一发，之后全靠超声波"看得见前车"。</figcaption>
+    </figure>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">二、和单片机项目摆在一起看</h3>
+
+    <div class="tblwrap io-hide">
+    <table>
+      <thead><tr><th>维度</th><th>PIC 小车（微机课设）</th><th>本项目（FPGA）</th></tr></thead>
+      <tbody>
+        <tr><td class="blue">决策方式</td><td>主循环逐条执行，靠中断响应事件</td><td>所有逻辑<b>同时存在</b>，每个时钟沿全部重算一遍</td></tr>
+        <tr><td class="blue">"等一会儿"</td><td><code>while</code> 空转或时基中断计数</td><td>计数器数时钟数：<span class="mono">15 ms = 750000</span> 周期</td></tr>
+        <tr><td class="blue">分支代价</td><td>if-else 只走一条路，多分支多花时间</td><td>case 的所有分支<b>都生成了硬件</b>，选哪个不花额外时间</td></tr>
+        <tr><td class="blue">并发</td><td>伪并发（中断打断主循环）</td><td>真并发（五个模块物理上同时跑）</td></tr>
+        <tr><td class="blue">改起来</td><td>改一行 C 重新编译烧录</td><td>改一个模块单独重综合，端口不动别的就不动</td></tr>
+        <tr><td class="blue">最怕什么</td><td>时序错（错过一个字节）</td><td><b>亚稳态</b>（异步信号直接进时钟域）与时序违例</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="cal def"><span class="t">一句话记住</span>讲这个项目时永远先说：<b>"单片机是做一件事的 CPU，FPGA 是同时做所有事的电路"</b>。后面每一个设计细节——查表、计数、状态机——都是这个差别的延伸。</div>
+
+    <div class="qa io-hide">
+      <div class="qi"><p class="q">为什么这套系统适合放 FPGA，而不是再拿一个单片机做？</p><p class="a">三个理由：①需要<b>精确的并行时间窗</b>——15 ms 确认、1 s 冷却、38 kHz 载波同时跑，单片机要靠定时器拼；②双车是课设题目要求展示数字系统设计能力；③模块化在 FPGA 里是"物理隔离"——改一个模块不影响其他模块的时序，比 C 的函数隔离硬得多。</p></div>
+    </div>
+
+  </div>
+</section>
+<!-- ============ 02 顶层 ============ -->
+<section id="top">
+  <div class="sec-h"><span class="num">02</span><h2>顶层：例化即集成<small>smart_car.vhd · 256 行 · 唯一的业务逻辑是蜂鸣器</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">顶层文件是<b>一张电路图</b>，不是一段程序：声明六个元件（component），用端口映射（port map）把线连上。读懂顶层的标志是——<b>只看端口名就能画出系统框图</b>。</p>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">一、先看接口：这个系统对外是什么</h3>
+
+    <p>entity 的 port 列表就是开发板的接线表。读它的时候问自己一个问题：<b>每个信号是"外设固定脚"还是"自己选的"？</b></p>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">smart_car.vhd</span><span class="rg">4–39 entity</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="4">entity smart_car is
+    Port ( ①
+        sys_clk   : in  STD_LOGIC; -- 50MHz 时钟
+        sys_rst_n : in  STD_LOGIC; -- 复位按键
+        key_start : in STD_LOGIC; -- 启动按键
+        
+        -- 1. 8路灰度模块接口
+        sensor_out : in  STD_LOGIC; ②
+        sensor_ad  : out STD_LOGIC_VECTOR(2 downto 0);
+        
+        -- 2. 超声波接口
+        echo : in STD_LOGIC;
+        trig : out STD_LOGIC;
+        
+        -- 3. 电机驱动接口 (TB6612 / L298N)
+        mot_l_pwm : out STD_LOGIC; ③
+        mot_l_in1 : out STD_LOGIC; 
+        mot_l_in2 : out STD_LOGIC;
+        mot_r_pwm : out STD_LOGIC; 
+        mot_r_in1 : out STD_LOGIC; 
+        mot_r_in2 : out STD_LOGIC;
+        
+        -- 4. 调试与指示 LED
+        led_debug : out STD_LOGIC; -- 障碍物停车指示
+        led_lap   : out STD_LOGIC_VECTOR(1 downto 0); -- 圈数指示 ④
+        
+        -- 蜂鸣器输出端口（CE4EP6F17C8开发板）
+        buzzer    : out STD_LOGIC;  
+        
+        -- 红外物理接口
+        ir_tx : out STD_LOGIC; -- 接发射管
+        ir_rx : in STD_LOGIC  -- 接接收头
+    );
+end smart_car;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>复位是低有效</b>（<code>sys_rst_n</code>，n = negative）。整个项目所有进程的复位分支都写 <code>if sys_rst_n = '0'</code>——这是 FPGA 的惯例，开发板按键按下接地。</li>
+      <li><b>灰度只占 4 个引脚</b>：1 根公共输出 OUT + 3 根地址线 AD2–AD0。和 PIC 小车一模一样的"3-8 译码省 IO"方案——两辆车、两门课、同一种传感器模块，<b>这个取舍你已经做过两次</b>，面试时可以主动串起来讲。</li>
+      <li><b>电机是 PWM + 两根方向线</b>的标准 H 桥接法。注意：顶层把方向线<b>写死为正转</b>（后面会看到），所以这个系统<b>没有倒车</b>——丢线后不能倒回去找。</li>
+      <li><b>圈数指示只有 2 位 LED</b>，要显示 0–4 五个状态——2 位只能编码 4 个。这个"装不下"埋下了后面第 10 节要讲的真 bug。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">二、内部信号：连线的前奏</h3>
+
+    <p>architecture 的信号声明区（<span class="mono">103–120 行</span>）就是电路图上的"飞线"。名字统一加 <code>w_</code> 前缀（wire），一眼区分内部线和端口线：</p>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">smart_car.vhd</span><span class="rg">103–120 内部信号</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="103">    -- === 内部信号连线区 ===
+    signal w_sensor_data : STD_LOGIC_VECTOR(7 downto 0); ①
+    signal w_stop_flag   : STD_LOGIC;
+    signal w_speed_l     : INTEGER range 0 to 100;
+    signal w_speed_r     : INTEGER range 0 to 5000; ②
+    signal w_lap_info    : STD_LOGIC_VECTOR(1 downto 0);
+    signal w_distance_mm : INTEGER range 0 to 5000;
+    -- 红外握手信号
+    signal w_ir_tx_trig : STD_LOGIC; -- 逻辑 -> 发送
+    signal w_ir_rx_det  : STD_LOGIC; -- 接收 -> 逻辑
+    
+    -- === 蜂鸣器专用控制信号 ===
+    signal buzzer_en      : STD_LOGIC := '0'; -- 蜂鸣器使能
+    signal buzzer_has_ring: STD_LOGIC := '0'; -- 防重复触发标志 ③
+    signal buzzer_cnt     : INTEGER range 0 to 25000; -- 1kHz方波计数
+    signal buzzer_pwm     : STD_LOGIC := '0'; -- 蜂鸣器方波输出
+    signal buzzer_dur_cnt : INTEGER range 0 to 100000000; -- 发声时长计数
+    constant BUZZER_RING_DUR : INTEGER := 50000000; -- 发声1秒（可调整）</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>线状态是 8 位向量</b>：scanner 扫完 8 路灰度后打包成一帧 <code>w_sensor_data</code>，整帧喂给决策模块——不是"读一次用一次"，两个模块之间永远有最新的一帧。</li>
+      <li><span class="hl-r">w_speed_r 的 range 是 0 to 5000</span>——左右轮应该一模一样（0 to 100），右边明显是复制粘贴改漏。实际速度值永远 ≤100 所以<b>侥幸没炸</b>；但在仿真里若某分支给到 100 以上，会直接报越界。细节在第 10 节展开。</li>
+      <li><b>蜂鸣器的"只响一次"是用一个标志位实现的</b>：硬件没有"这件事做过没有"的概念，必须自己用一个寄存器记住——这是软件里"状态变量"的硬件等价物。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">三、例化：六个元件怎么连</h3>
+
+    <p>真正的"集成"就是 179 行之后的五段 port map。把它们的关系画出来，你会得到第 01 节那张框图——<b>顶层代码就是框图的文本形式</b>：</p>
+
+    <div class="chain io-hide">
+      <span>sensor_scanner</span><i>→w_sensor_data→</i><span>tracking_logic</span><i>→w_speed_l/r→</i><span class="hot">motor_pwm ×2</span>
+    </div>
+    <div class="chain io-hide">
+      <span>hc_sr04</span><i>→w_distance_mm→</i><span>tracking_logic</span><i>&nbsp;&nbsp;</i><span>ir_sync</span><i>→w_ir_rx_det→</i><span>tracking_logic</span><i>→w_ir_tx_trig→</i><span class="hot">ir_sync</span>
+    </div>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">smart_car.vhd</span><span class="rg">215–254 例化决策与电机</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="215">    -- 3. 实例化控制逻辑
+    u_logic: tracking_logic
+    port map(
+        clk => sys_clk, 
+        rst_n => sys_rst_n,
+        sensor_in => w_sensor_data, ①
+        stop_req => w_stop_flag, ②
+        start_btn => key_start,
+        distance_mm => w_distance_mm,
+        speed_l => w_speed_l, 
+        speed_r => w_speed_r,
+        debug_lap => w_lap_info,
+        ir_start_in => w_ir_rx_det, -- 连入
+        tx_trigger  => w_ir_tx_trig -- 连出
+    );
+
+    led_lap <= w_lap_info; 
+
+    -- 4. 实例化电机PWM输出
+    u_pwm_l: motor_pwm
+    port map( 
+        clk => sys_clk, 
+        rst_n => sys_rst_n, 
+        duty => w_speed_l, 
+        pwm_out => mot_l_pwm 
+    );
+    
+    u_pwm_r: motor_pwm
+    port map( 
+        clk => sys_clk, 
+        rst_n => sys_rst_n, 
+        duty => w_speed_r, 
+        pwm_out => mot_r_pwm 
+    );
+
+    -- 5. 电机方向控制
+    mot_l_in1 <= '1';  ③
+    mot_l_in2 <= '0';
+    mot_r_in1 <= '1'; 
+    mot_r_in2 <= '0';</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>连线靠名字对齐</b>：<code>=&gt;</code> 左边是元件的端口名，右边是顶层信号名。端口就是接口文档——组员分头写模块前，先把这五个 port map 定下来。</li>
+      <li><span class="hl-r">stop_req 连了，但 tracking_logic 的进程里根本没引用它</span>。停车实际是决策模块自己拿 <code>distance_mm &lt; 60</code> 判的。这根线是<b>接了设备的空插座</b>——第 10 节详谈。</li>
+      <li><b>方向线直接赋常量</b>。这是并发信号赋值（不在进程里），永远成立。"没有倒车"这个系统级限制就是在这一行定下的。</li>
+    </ul>
+
+    <div class="qa io-hide">
+      <div class="qi"><p class="q">顶层为什么不把逻辑全写在一个文件里？</p><p class="a">三个理由，按分量排：①<b>可单独仿真</b>——每个模块独立写 testbench，不依赖整车；②<b>改动隔离</b>——改循迹只重综合 tracking_logic，其他模块的时序不受牵连；③<b>端口即文档</b>——五个 port map 就是团队分工的合同，谁负责什么一目了然。</p></div>
+      <div class="qi"><p class="q">component 声明和直接写 entity 有什么区别？</p><p class="a">component 声明是"我知道有个元件长这样"的前向引用，配合 port map 用；直接例化（entity work.xxx）可以省掉声明，但把顶层和具体架构绑死。这个项目用传统 component 写法，和教科书一致——讲的时候点一句你知道两种都行。</p></div>
+    </div>
+
+  </div>
+</section>
+<!-- ============ 03 扫描 ============ -->
+<section id="scan">
+  <div class="sec-h"><span class="num">03</span><h2>灰度扫描 sensor_scanner<small>50 行 · 3 根地址线轮流"点名"，每路等 100 μs</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">8 路灰度共用 1 根输出线：<b>地址线给编号，OUT 吐电平</b>。这个模块就是一个永不停止的循环点名器——0 号、1 号、……7 号、再回 0 号，每换一个人等 100 μs 让他开口，把答案记进 8 位寄存器。</p>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">一、全貌：两个计数器撑起的循环</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">sensor_scanner.vhd</span><span class="rg">18–49 全部逻辑</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="18">architecture Behavioral of sensor_scanner is
+    signal channel_idx : integer range 0 to 7 := 0; ①
+    signal delay_cnt   : integer range 0 to STABLE_TIME := 0; ②
+    signal temp_data   : STD_LOGIC_VECTOR (7 downto 0) := (others => '0');
+begin
+    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            channel_idx <= 0;
+            delay_cnt <= 0;
+            ad_pins <= "000";
+            data_ready <= (others => '0');
+        elsif rising_edge(clk) then
+            -- 输出地址
+            ad_pins <= std_logic_vector(to_unsigned(channel_idx, 3)); ③
+            
+            if delay_cnt < STABLE_TIME then ④
+                delay_cnt <= delay_cnt + 1;
+            else
+                -- 采样: 1=黑, 0=白 (根据你刚才的测试结果) ⑤
+                temp_data(channel_idx) <= sensor_out;
+                
+                delay_cnt <= 0;
+                if channel_idx = 7 then
+                    channel_idx <= 0;
+                    data_ready <= temp_data; -- 更新一帧数据 ⑥
+                else
+                    channel_idx <= channel_idx + 1;
+                end if;
+            end if;
+        end if;
+    end process;
+end Behavioral;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>channel_idx 是"点名到几号"</b>，range 0 to 7——数值范围写进类型里，综合器会自动截掉高位，写错范围综合阶段就暴露。</li>
+      <li><b>delay_cnt 是"这轮等了多久"</b>，上限就是泛型 <code>STABLE_TIME := 5000</code>。数到头才允许采样——这是这个模块唯一的"耐心"。</li>
+      <li><b>地址每拍都在输出</b>（不只是切换那一拍）。赋值语句放在 if 外面，意味着 ad_pins 永远忠实反映 channel_idx——多花不了任何资源，但省去了"什么时候更新地址"的判断。</li>
+      <li><b>STABLE_TIME = 5000 个时钟 = 100 μs</b>。切换地址后模块内部的模拟开关需要建立时间，电平没稳就读，读到的是<b>上一路的残留</b>。</li>
+      <li><span class="hl-t">注释里的"根据你刚才的测试结果"是调试时留下的原话</span>——1=黑、0=白的极性是实测定的，不是手册定的。讲项目时这种痕迹反而证明你上过手。</li>
+      <li><b>temp_data 攒够 8 位才搬进 data_ready</b>：读第 0–6 路时，输出侧还在用上一整帧旧数据；只有扫完第 7 路，新的一帧才"原子地"整体可见——决策模块永远拿到<b>完整一致的一帧</b>，绝不会看到半新半旧。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">二、把时序画出来</h3>
+
+    <figure class="fig io-hide">
+    <svg viewBox="0 0 680 240" role="img" aria-label="扫描时序">
+      <defs>
+        <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#35d0ba"/></marker>
+      </defs>
+
+      <text class="t2" x="18" y="34">ad_pins</text>
+      <g class="mn">
+        <rect x="90" y="44" width="76" height="26" fill="#1a2230" stroke="#6aa9ff"/>
+        <text class="t2" x="128" y="62" text-anchor="middle" style="fill:#9dc7ff">000</text>
+        <rect x="166" y="44" width="76" height="26" fill="#1a2230" stroke="#6aa9ff"/>
+        <text class="t2" x="204" y="62" text-anchor="middle" style="fill:#9dc7ff">001</text>
+        <rect x="242" y="44" width="76" height="26" fill="#1a2230" stroke="#6aa9ff"/>
+        <text class="t2" x="280" y="62" text-anchor="middle" style="fill:#9dc7ff">010</text>
+        <rect x="318" y="44" width="76" height="26" fill="#1a2230" stroke="#6aa9ff"/>
+        <text class="t2" x="356" y="62" text-anchor="middle" style="fill:#9dc7ff">011</text>
+        <rect x="394" y="44" width="266" height="26" fill="#141a22" stroke="#3a4553"/>
+        <text class="t3" x="527" y="62" text-anchor="middle">…直到 111，再回 000</text>
+      </g>
+
+      <text class="t2" x="18" y="110">sensor_out</text>
+      <path d="M90 118 H166" stroke="#35d0ba" stroke-width="2"/>
+      <path d="M90 132 H166" stroke="#35d0ba" stroke-width="2" stroke-dasharray="3 3" opacity=".45"/>
+      <text class="t3" x="128" y="152" text-anchor="middle">↑ 电平建立中（残留→稳定）</text>
+      <path d="M204 112 V 122" stroke="#35d0ba" stroke-width="2" marker-end="url(#s1)"/>
+      <text class="t3" x="204" y="103" text-anchor="middle" style="fill:#7fe3d1">采样点：数满 5000 拍</text>
+
+      <rect x="90" y="168" width="560" height="44" rx="7" fill="#12211f" stroke="#35d0ba"/>
+      <text class="t2" x="370" y="187" text-anchor="middle" style="fill:#7fe3d1">data_ready：只在扫完第 8 路的那一拍整体更新</text>
+      <text class="t3" x="370" y="203" text-anchor="middle">一帧 = 8 × 100 μs = 800 μs → 帧率约 1.25 kHz</text>
+    </svg>
+    <figcaption>每格 76 px ≈ 100 μs 稳定期。8 路串行分时复用一根 OUT 线，是"省引脚"换"采样率"的经典交换。</figcaption>
+    </figure>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">三、和 PIC 小车同一个传感器，两种做法</h3>
+
+    <div class="tblwrap io-hide">
+    <table>
+      <thead><tr><th></th><th>PIC 版（微机课设）</th><th>FPGA 版（本项目）</th></tr></thead>
+      <tbody>
+        <tr><td class="teal">切地址后等稳定</td><td>CPU 空转 80 个循环（≈80 μs，volatile 防优化）</td><td>计数器数 5000 拍（100 μs），<b>硬件自动</b></td></tr>
+        <tr><td class="teal">抗干扰</td><td>每路采 3 次、≥2 次为高才认（表决）</td><td><span class="hl-r">单次采样，没有表决</span>——省了逻辑，靠决策端查表容错</td></tr>
+        <tr><td class="teal">数据一致性</td><td>读一次用一次，函数返回时才有效</td><td>永远有最新一帧挂在总线上，<b>决策随取随用</b></td></tr>
+        <tr><td class="teal">占用资源</td><td>主循环时间（每读一遍 ≈1 ms）</td><td>一个独立进程 + 两个小计数器，不占别人时间</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="cal tip"><span class="t">面试话术</span>被问"两个项目都用 3-8 选通，学到什么"：<b>同一块传感器板，在 CPU 上是"函数调用"，在 FPGA 上是"独立进程"</b>——接口一样，时间模型完全不同。FPGA 版不需要表决反而能工作，是因为决策端查表天然容忍单路误判。</div>
+
+    <div class="qa io-hide">
+      <div class="qi"><p class="q">STABLE_TIME 为什么是 5000？大了小了分别会怎样？</p><p class="a">5000 ÷ 50 MHz = 100 μs，覆盖选通开关的建立时间。<b>小了</b>：读到上一路残留，表现为"偶发串道"——本该全白的某一路闪黑。<b>大了</b>：一帧变长、帧率下降，过线检测的响应变慢。100 μs 是实测能稳的最小值量级（泛型参数化方便现场重调）。</p></div>
+      <div class="qi"><p class="q">data_ready 这个名字合适吗？</p><p class="a">不合适——它输出的是<b>8 位数据本身</b>，不是"准备好了"的单 bit 标志。命名会误导读代码的人。讲的时候可以主动指出：更好的做法是拆成 data 和 valid 两根线，或者改名 sensor_frame。</p></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ 04 超声 ============ -->
+<section id="sonic">
+  <div class="sec-h"><span class="num">04</span><h2>超声测距 hc_sr04<small>69 行 · 数 echo 宽度，除以 294 得毫米</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">HC-SR04 的协议一句话：<b>你发 20 μs 的 trig，它回一个 echo 脉冲，脉宽正比于声波往返时间</b>。这个模块的全部工作 = 造 trig + 当秒表 + 换算单位。</p>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">一、先看三个关键常量</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">hc_sr04.vhd</span><span class="rg">16–21 声明区</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="16">architecture Behavioral of hc_sr04 is
+    signal trig_cnt : integer range 0 to 1000000 := 0; -- 20ms周期 ①
+    signal echo_cnt : integer range 0 to 5000000 := 0; ②
+    signal echo_sync : STD_LOGIC_VECTOR(1 downto 0) := (others => '0');
+    constant CLK_PER_MM : integer := 294; -- 1mm对应294个50MHz时钟周期 ③
+    
+begin</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>trig_cnt 上限 1000000 = 20 ms</b>：每 20 ms 发一次测距。周期不能太短——前一次的回波还没消散就发下一次，会串扰；太长则距离更新慢，车速快了跟不上前车变化。</li>
+      <li><b>echo_cnt 上限 5000000 = 100 ms</b>：对应最大量程。声波 100 ms 走 340×0.1 = 34 m，往返 17 m——远超 HC-SR04 标称 4 m 量程，这个上限够用。<span class="hl-r">但如果 echo 卡在高电平超过 100 ms，计数器会越界</span>——第 10 节详谈。</li>
+      <li><b>294 是整个模块的灵魂</b>，下面现场推导。</li>
+    </ul>
+
+    <div class="calc io-hide">声速 ≈ 340 m/s，1 mm 往返飞行时间：
+t = 2 × 1 mm ÷ 340 m/s = 5.88 μs
+折成 50 MHz 时钟周期：
+n = 5.88 μs × 50 周期/μs = <span class="r">294 周期/mm</span>
+验算：echo 高电平 5880 个周期 ÷ 294 = 20 mm ✓
+（echo_cnt 上限 5000000 ÷ 294 ≈ 17000 mm ≫ 量程 5000 mm ✓）</div>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">二、主进程：造波、计时、换算</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">hc_sr04.vhd</span><span class="rg">23–68 主进程</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="23">    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            trig <= '0';
+            stop_flag <= '0';
+            trig_cnt <= 0;
+            echo_cnt <= 0;
+            echo_sync <= (others => '0');
+            distance_mm <= 0;
+            
+        elsif rising_edge(clk) then
+            -- 1. 产生Trig信号：20ms周期，20us高电平
+            if trig_cnt &lt; 1000000 then ①
+                trig_cnt &lt;= trig_cnt + 1;
+                if trig_cnt &lt; 1000 then
+                    trig &lt;= '1';
+                else
+                    trig &lt;= '0';
+                end if;
+            else
+                trig_cnt &lt;= 0;
+            end if;
+            
+            -- 2. Echo信号同步防抖（仅两级，无延迟）
+            echo_sync(0) &lt;= echo; ②
+            echo_sync(1) &lt;= echo_sync(0);
+            
+            -- 3. 测量Echo宽度（实时计算，无滤波）
+            if trig_cnt = 1000 then -- Trig结束后开始计数
+                echo_cnt &lt;= 0;
+            elsif echo_sync(1) = '1' then
+                echo_cnt &lt;= echo_cnt + 1; ③
+            else
+                -- 实时输出距离（无延迟）
+                distance_mm &lt;= echo_cnt / CLK_PER_MM; ④
+                if (echo_cnt / CLK_PER_MM) &lt; 60 then
+                    stop_flag &lt;= '1';
+                else
+                    stop_flag &lt;= '0';
+                end if;
+            end if;
+            
+        end if;
+    end process;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>trig 脉冲宽度由同一个计数器兼职产生</b>：trig_cnt &lt; 1000（=20 μs）期间 trig 为高。一个计数器既定周期又定脉宽——省一个计数器的代价是两个参数耦合，改周期必看脉宽。</li>
+      <li><b>echo 进时钟域前打了两拍</b>（echo_sync(0) → (1)）。echo 是异步外部信号，直接用可能在时钟沿附近违反建立/保持时间，触发器输出进入<b>亚稳态</b>——既非 0 也非 1 的中间电平，往后传染。两级同步器是标准解法：第一拍允许"抖"，第二拍输出的已经是稳定值。<span class="hl-v">这是全项目唯一真正用上的同步器</span>——红外的接收信号没这么处理（第 05、10 节）。</li>
+      <li><b>秒表逻辑</b>：echo_sync(1) 为高就 +1。注意计的是<b>同步后</b>的信号，所以 echo 实际边沿被延迟了两拍（40 ns）——对毫米级精度无感。</li>
+      <li><span class="hl-a">除法在 else 分支里，意味着"echo 不为高的每一拍"都在算 echo_cnt ÷ 294</b>。综合器必须生成一个真实的除法器，50 MHz 单拍完成 23 位÷9 位，这是本模块<b>时序最紧的路径</b>（推断：综合报告里它大概率是关键路径）。更稳妥的写法是只在 echo 下降沿那一拍算一次，或用乘法+移位代替。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">三、一次测量的完整时序</h3>
+
+    <figure class="fig io-hide">
+    <svg viewBox="0 0 680 216" role="img" aria-label="超声测距时序">
+      <g class="mn">
+        <text class="t2" x="18" y="36">trig</text>
+        <path d="M80 46 H100 V30 H118 V46 H660" stroke="#f2b25c" stroke-width="2" fill="none"/>
+        <text class="t3" x="109" y="24" text-anchor="middle" style="fill:#f7c98a">20 μs 高</text>
+        <line x1="118" y1="20" x2="118" y2="96" stroke="#3a4553" stroke-dasharray="3 3"/>
+        <text class="t3" x="400" y="62" text-anchor="middle">低电平直到下个 20 ms 周期</text>
+
+        <text class="t2" x="18" y="106">echo</text>
+        <path d="M80 116 H160 V96 H480 V116 H660" stroke="#35d0ba" stroke-width="2" fill="none"/>
+        <text class="t3" x="320" y="88" text-anchor="middle" style="fill:#7fe3d1">高电平宽度 = 飞行时间</text>
+        <line x1="160" y1="90" x2="160" y2="160" stroke="#3a4553" stroke-dasharray="3 3"/>
+        <line x1="480" y1="90" x2="480" y2="160" stroke="#3a4553" stroke-dasharray="3 3"/>
+
+        <text class="t2" x="18" y="150">echo_cnt</text>
+        <path d="M160 158 C 260 128, 380 128, 480 128" stroke="#c08cf5" stroke-width="2" fill="none"/>
+        <text class="t2 mn" x="320" y="146" text-anchor="middle" style="fill:#d7b6ff">0 → N（每拍 +1）</text>
+        <text class="t3 mn" x="320" y="180" text-anchor="middle">echo 落低那一拍：distance_mm ≤ N ÷ 294</text>
+        <text class="t3 mn" x="320" y="196" text-anchor="middle">N = 5880 → 20 mm；N = 117600 → 400 mm（跟丢阈值）</text>
+      </g>
+    </svg>
+    <figcaption>注意 distance_mm 只在 echo 拉低后更新——若某次 echo 丢失，输出会保持上一次的旧值，而不是报错。</figcaption>
+    </figure>
+
+    <div class="cal warn io-hide"><span class="t">两个隐蔽行为</span>①<b>距离 0 有双重含义</b>：echo 从没来过（开机、丢波）时 distance_mm 也是 0——决策模块把 <code>distance_mm = 0</code> 和 <code>&gt; 400</code> 合并成"跟丢"，歪打正着，但这是<b>约定俗成而不是设计出来的哨兵值</b>。②<b>stop_flag 与决策模块的停车判断重复</b>：这里判了 &lt;60，tracking_logic 里又判了一次——stop_req 线根本没用（第 10 节）。</div>
+
+    <div class="qa io-hide">
+      <div class="qi"><p class="q">为什么要两级打拍？一级不行吗？</p><p class="a">一级同步器的问题是：那一拍输出可能正处亚稳态，下一级电路立刻用它就会出错。第二拍的作用是<b>给亚稳态一个完整的时钟周期去稳定</b>。两级不能根绝亚稳态（概率按指数下降但不为零），但对 50 MHz、MTBF 要求普通的系统足够；高可靠性场景上三级并加 FIFO 做跨域握手。</p></div>
+      <div class="qi"><p class="q">为什么 20 ms 测一次，不是越快越好？</p><p class="a">三个限制：①HC-SR04 手册建议测量周期 ≥60 ms 防回波串扰（这里取 20 ms 偏激进，靠"距离变化平滑"扛住了，推断）；②每帧循迹 0.8 ms，测距密度远高于循迹就够了；③测得太密，前车反射的多次回波会互相污染。四档跟随对距离更新率的要求本来就不高。</p></div>
+    </div>
+
+  </div>
+</section>
+<!-- ============ 05 红外 ============ -->
+<section id="ir">
+  <div class="sec-h"><span class="num">05</span><h2>红外握手 ir_sync<small>148 行 · 38 kHz 载波 + 9 ms 引导码，跨车同步的那一声哨</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">两车同步的关键 13.5 ms：<b>领车把"出发"调制成一串 38 kHz 载波发 9 ms，跟车的接收头解调后只要看到低电平持续超过 2 ms 就起步</b>。这是一个被简化到极致的红外遥控协议——只发一个引导码，不带任何数据。</p>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">一、参数区：三个时间从哪来</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">ir_sync.vhd</span><span class="rg">22–46 参数与状态机声明</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="22">    -- === 发送参数 ===
+    -- 38kHz 载波: 50MHz / 38000 ≈ 1315. 翻转周期 ≈ 657
+    constant CARRIER_HALF : integer := 657; ①
+    signal carrier_cnt    : integer range 0 to 1000 := 0;
+    signal carrier_38k    : std_logic := '0';
+    
+    -- 发送状态机: 发送 9ms 载波 -> 4.5ms 空闲
+    constant TX_TIME_9MS  : integer := 450000;  ②
+    constant TX_TIME_4MS5 : integer := 225000;
+    
+    type tx_state_t is (IDLE, SEND_9MS, SEND_GAP, DONE);
+    signal tx_state : tx_state_t := IDLE; ③
+    signal tx_cnt   : integer := 0;
+
+    -- === 接收参数 ===
+    -- VS1838 输出低电平表示收到载波
+    -- 我们检测：低电平持续 8ms~10ms，紧接着高电平持续 > 2ms
+    signal rx_cnt     : integer := 0;
+    signal rx_sync_0  : std_logic := '1';
+    signal rx_sync_1  : std_logic := '1'; -- 打两拍消除亚稳态 ④
+    type rx_state_t is (RX_IDLE, RX_CHECK_LOW, RX_CHECK_HIGH);
+    signal rx_state   : rx_state_t := RX_IDLE;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>38 kHz 载波的半周期 = 657 个时钟</b>：50 MHz ÷ 38 kHz ≈ 1315.8 拍一个完整周期，翻转两次 → 每半拍 657。现场推导见下面。</li>
+      <li><b>9 ms + 4.5 ms 不是拍脑袋</b>——这是红外遥控 NEC 协议的<b>引导码</b>时序（9 ms 载波 + 4.5 ms 静默）。借用成熟的时序参数，接收头天生认识，抗干扰特性也是现成验证过的。</li>
+      <li><b>发送是一个四状态状态机</b>：IDLE → SEND_9MS → SEND_GAP → DONE → IDLE。"完成"也要是一个状态——硬件没有"函数返回"这回事，状态机必须显式回到起点。</li>
+      <li><span class="hl-r">rx_sync_0 / rx_sync_1 声明了，但下面的接收进程一个都没用</span>。注释写着"打两拍消除亚稳态"，代码却直接拿原始 <code>ir_rx_pin</code> 判断——<b>防线画在图纸上，没焊到板子上</b>。这是第 10 节的头号真问题。同样，rx_state / rx_cnt 声明了 RX_IDLE 等状态，接收逻辑其实也没用状态机（见下）。</li>
+    </ul>
+
+    <div class="calc io-hide">38 kHz 载波半周期推导：
+一个完整载波周期 = 50 MHz ÷ 38 kHz = 1315.8 拍
+载波是方波，一个周期翻转 2 次 → 每半周期 = 1315.8 ÷ 2 ≈ <span class="r">657 拍</span> ≈ 13.1 μs
+9 ms 发送 = 450000 拍 ✓（50 × 10⁶ × 9 × 10⁻³）
+4.5 ms 空闲 = 225000 拍 ✓</div>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">二、发送侧：载波生成 + 状态机</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">ir_sync.vhd</span><span class="rg">49–109 载波与发送</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="49">    -- 1. 38kHz 载波生成器
+    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            carrier_cnt &lt;= 0;
+            carrier_38k &lt;= '0';
+        elsif rising_edge(clk) then
+            if carrier_cnt &lt; CARRIER_HALF then
+                carrier_cnt &lt;= carrier_cnt + 1;
+            else
+                carrier_cnt &lt;= 0;
+                carrier_38k &lt;= not carrier_38k; ①
+            end if;
+        end if;
+    end process;
+
+    -- 2. 发送逻辑 (TX)
+    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            ...
+        elsif rising_edge(clk) then
+            case tx_state is
+                when IDLE =&gt;
+                    ir_tx_pin &lt;= '0';
+                    if tx_trigger = '1' then ②
+                        tx_state &lt;= SEND_9MS;
+                        tx_cnt &lt;= 0;
+                    end if;
+                when SEND_9MS =&gt;
+                    ir_tx_pin &lt;= carrier_38k; ③
+                    if tx_cnt &lt; TX_TIME_9MS then
+                        tx_cnt &lt;= tx_cnt + 1;
+                    else
+                        tx_state &lt;= SEND_GAP;
+                        tx_cnt &lt;= 0;
+                    end if;
+                when SEND_GAP =&gt;
+                    ir_tx_pin &lt;= '0'; 
+                    if tx_cnt &lt; TX_TIME_4MS5 then
+                        tx_cnt &lt;= tx_cnt + 1;
+                    else
+                        tx_state &lt;= DONE;
+                    end if;
+                when DONE =&gt;
+                    ir_tx_pin &lt;= '0';
+                    tx_state &lt;= IDLE; -- 回到空闲
+            end case;
+        end if;
+    end process;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>载波是独立进程</b>：一个自由振荡的 38 kHz 方波发生器，永远在跑。发送状态机只在 SEND_9MS 里把它"接到"输出脚——<b>门控</b>而不是"每次现造"，这是载波输出的标准做法。</li>
+      <li><b>tx_trigger 来自决策模块</b>：按键启动（防抖通过）那一拍拉高，其余时间为 0——所以领车只在启动瞬间发一次红外，跑起来之后不再发。</li>
+      <li><b>ir_tx_pin 在载波和常 0 之间切换</b>：SEND_9MS 里每个时钟沿重新赋值 carrier_38k 的当前值，等效于把振荡器接通 9 ms。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">三、接收侧：极简判决</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">ir_sync.vhd</span><span class="rg">114–147 接收进程</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="114">    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            rx_cnt &lt;= 0;
+            rx_detect &lt;= '0';
+        elsif rising_edge(clk) then
+            
+            -- VS1838B 特性：收到 38kHz 信号时输出【低电平 '0'】 ①
+            
+            if ir_rx_pin = '0' then ②
+                -- 收到信号了，开始累计时间
+                if rx_cnt &lt; 2000000 then -- 防止溢出
+                    rx_cnt &lt;= rx_cnt + 1;
+                end if;
+                
+                -- 只要低电平持续超过 2ms (100,000 个时钟周期)
+                -- 就认为这是有效的启动信号！
+                if rx_cnt = 100000 then 
+                    rx_detect &lt;= '1'; -- 触发启动！ ③
+                else
+                    rx_detect &lt;= '0';
+                end if;
+            else
+                rx_cnt &lt;= 0;
+                rx_detect &lt;= '0';
+            end if;
+            
+        end if;
+    end process;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>接收头是低有效</b>：VS1838 收到 38 kHz 时输出 0。所以"收到载波"在代码里是 <code>ir_rx_pin = '0'</code>——极性反直觉，是这类接收头的普遍特性。</li>
+      <li><span class="hl-r">直接用了原始 ir_rx_pin，没经过声明的两级同步器</span>。超声模块做了同步，这里没做——同一个项目里两处异步输入，一处规范一处裸奔，<b>面试时能自己指出这个不一致，就是加分项</b>。</li>
+      <li><b>判决阈值 2 ms，比发送的 9 ms 短得多</b>。注释原话："不需要 9ms 那么长，2ms 足够区别于普通干扰"。这是<b>灵敏度换速度</b>：等满 9 ms 意味着跟车最多晚 9 ms 起步；2 ms 就触发，起步更跟手。代价是理论上 2 ms 以上的环境红外干扰可能误触发——实测环境里没有，就赌赢了。</li>
+      <li><b>rx_detect 是单拍脉冲</b>：只有 rx_cnt 恰好等于 100000 的那一拍输出 1，下一拍就回 0。决策模块把它当<b>边沿事件</b>用（state_lap=0 时看到就启动），脉冲宽度不重要，重要的是"出现过"。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">四、空中的波形长什么样</h3>
+
+    <figure class="fig io-hide">
+    <svg viewBox="0 0 680 236" role="img" aria-label="红外帧结构">
+      <defs>
+        <marker id="i1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#35d0ba"/></marker>
+      </defs>
+
+      <text class="t2" x="18" y="30">领车 ir_tx_pin</text>
+      <rect x="120" y="40" width="200" height="34" fill="#12211f" stroke="#35d0ba"/>
+      <g class="mn">
+        <path d="M128 74 V52 h8 v22 h8 v-22 h8 v22 h8 v-22 h8 v22 h8 v-22 h8 v22 h8 v-22 h8 v22 h8 v-22 h8 v22 h8 v-22 h8 v22 h8 v-22 h8 v22 h8 v-22 h8 v22 h8 v-22 h8 v22" stroke="#35d0ba" stroke-width="1.4" fill="none"/>
+        <text class="t3" x="220" y="92" text-anchor="middle">38 kHz 载波 × 9 ms（≈342 个周期）</text>
+      </g>
+      <line x1="320" y1="36" x2="392" y2="36" stroke="#3a4553" stroke-width="2"/>
+      <line x1="392" y1="36" x2="392" y2="74" stroke="#3a4553" stroke-width="2" stroke-dasharray="3 3"/>
+      <text class="t3" x="410" y="58">4.5 ms 静默</text>
+      <text class="t3" x="120" y="58" class="mn">← NEC 引导码格式</text>
+
+      <text class="t2" x="18" y="140">跟车 ir_rx_pin（解调后）</text>
+      <path d="M120 150 H320 V168 H660" stroke="#6aa9ff" stroke-width="2" fill="none"/>
+      <text class="t3" x="220" y="146" text-anchor="middle" style="fill:#9dc7ff">低电平 = 收到载波</text>
+      <rect x="120" y="152" width="34" height="14" fill="none"/>
+      <path d="M154 190 H254" stroke="#f2b25c" stroke-width="2" marker-end="url(#i1)"/>
+      <text class="t3" x="204" y="182" text-anchor="middle" style="fill:#f7c98a">数到 2 ms 就触发</text>
+      <text class="t3 mn" x="420" y="196">比 9 ms 短 7 ms —— 灵敏度换速度的取舍</text>
+
+      <text class="t3" x="120" y="226">载波周期 26.3 μs，图上比例严重失真——真实波形里 9 ms 塞了约 342 个完整周期</text>
+    </svg>
+    <figcaption>发送 9 ms 载波 + 4.5 ms 静默（NEC 引导码）；接收侧只认"低电平持续 > 2 ms"。协议没有数据位——它只是一个"哨"。</figcaption>
+    </figure>
+
+    <div class="cal tip"><span class="t">为什么红外一定要载波</span>环境光（阳光、灯光）里有大量红外成分，直流点亮发射管根本区分不开。把信号调制到 38 kHz，接收头内部带通滤波器只认这个频率的"闪烁"——<b>用频域换信噪比</b>。这和收音机要载波是同一个道理，面试被问到"为什么要 38 kHz"时往这个方向答。</div>
+
+    <div class="qa io-hide">
+      <div class="qi"><p class="q">这个握手可靠吗？跟车漏收了会怎样？</p><p class="a">单向、无确认、无重发——严格说不可靠。漏收的后果是跟车永远停在 state_lap=0。工程化做法：领车每隔 500 ms 重发直到收到跟车的回执（双向握手），或至少重发三次。课设里省掉，是因为两车距离近、一次成功率实测够高。<b>说清"知道它不可靠、为什么当时可以接受"，比假装它可靠强</b>。</p></div>
+      <div class="qi"><p class="q">rx_detect 为什么做成单拍脉冲而不是电平？</p><p class="a">决策端只需要"事件"不需要"状态"。如果做成持续电平，决策模块还得自己记"处理过没有"；单拍脉冲让每次接收天然是一次性事件。代价是<b>决策端那一拍必须醒着</b>——好在决策模块每个时钟沿都在跑，不存在错过。</p></div>
+    </div>
+
+  </div>
+</section>
+<!-- ============ 06 决策上 ============ -->
+<section id="logic">
+  <div class="sec-h"><span class="num">06</span><h2>决策上：状态机与圈数<small>tracking_logic.vhd · 我负责的模块 · 启动通道与"四圈不串圈"</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">这个模块是全系统唯一"做决定"的地方：<b>五状态跑圈状态机 + 两套启动通道 + 三重条件的圈数计数</b>。它的难点不在代码量，在于每个数字背后都是一次"误判会被怎样骗"的推演。</p>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">一、参数与信号：先把数字摆出来</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">tracking_logic.vhd</span><span class="rg">26–56 常量与信号</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="26">    -- === 基础速度参数 ===
+    constant BASE_SPD : integer := 55;  ①
+    constant TURN_HI  : integer := 60; 
+    constant TURN_LO  : integer := 15; 
+    constant ZERO     : integer := 0;
+    
+    -- === 跟随系统参数 ===
+    constant FOLLOW_ACC_DIST   : integer := 200;  
+    constant FOLLOW_DEC_DIST   : integer := 100;  
+    constant FOLLOW_STOP_DIST  : integer := 60;   
+    constant FOLLOW_TRACK_DIST : integer := 400;  
+    constant ACC_RATIO         : integer := 130;  
+    constant DEC_RATIO         : integer := 50;   
+    constant NORMAL_RATIO      : integer := 100;  
+    
+    -- === 圈数与计时信号 ===
+    signal state_lap : integer range 0 to 4 := 0;  ②
+    signal last_act : integer range 0 to 2 := 0;   ③
+    constant COOLDOWN_MAX : integer := 50000000; 
+    signal cooldown_timer : integer := 0;
+    signal btn_deb_cnt : integer := 0;
+    signal eff_sensor : STD_LOGIC_VECTOR(7 downto 0);
+    constant BLACK_FILTER_TIME : integer := 750000; ④
+    signal black_duration_cnt : integer := 0;
+    signal lap_count_flag : STD_LOGIC := '0'; 
+    
+    -- === Y字路口逻辑 ===
+    signal y_junction_lock : STD_LOGIC := '0';
+    signal y_lock_cnt      : integer range 0 to 5000000 := 0; 
+    constant Y_JUNC_TRIG : STD_LOGIC_VECTOR(7 downto 0) := "00011000"; ⑤</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>速度只有三档</b>：基础 55、转弯快侧 60、慢侧 15。差速只有"60/15"一种力度——循迹精度全靠查表选时机，不靠细腻的速度梯度。</li>
+      <li><b>state_lap 0–4 就是全部宏观状态</b>：0 等待启动、1–3 三圈、4 跑完停车。没有"暂停""倒退"——状态机的极简就是设计。</li>
+      <li><b>last_act 是"记忆"</b>：0=直行、1=左偏、2=右偏，全白丢线时靠它决定往哪边找线。</li>
+      <li><b>BLACK_FILTER_TIME = 750000 拍 = 15 ms</b>：全黑要持续这么久才算真过线；<b>COOLDOWN_MAX = 50000000 拍 = 1 s</b>：计完一圈后的冷却期。</li>
+      <li><b>Y_JUNC_TRIG = "00011000"</b>：中间两路（bit4、bit3）压线的特定组合——Y 字路口的特征码。它是查表里的"直行"码之一，也是路口锁定的触发码，一个编码两用。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">二、状态 0：两套启动通道</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">tracking_logic.vhd</span><span class="rg">87–116 等待启动</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="87">            if state_lap = 0 then
+                speed_l &lt;= 0;
+                speed_r &lt;= 0;
+                y_junction_lock &lt;= '0';
+                y_lock_cnt &lt;= 0;
+                lap_count_flag &lt;= '0';
+                tx_trigger &lt;= '0'; -- 默认不发送
+                
+                -- 【新增逻辑 A】红外启动通道 (跟随车用)
+                -- 只要收到信号，跳过防抖，立刻启动
+                if ir_start_in = '1' then ①
+                    state_lap &lt;= 1;
+                    cooldown_timer &lt;= COOLDOWN_MAX;
+                    -- 跟随车被唤醒后，不需要发送信号给别人
+                
+                -- 【新增逻辑 B】按键启动通道 (领头车用)
+                elsif start_btn = '0' then
+                    if btn_deb_cnt &lt; 1000000 then ②
+                        btn_deb_cnt &lt;= btn_deb_cnt + 1;
+                    else
+                        state_lap &lt;= 1;
+                        cooldown_timer &lt;= COOLDOWN_MAX;
+                        btn_deb_cnt &lt;= 0;
+                        
+                        -- 【重点】只有按键启动时，才触发红外发送，通知后车 ③
+                        tx_trigger &lt;= '1'; 
+                    end if;
+                else
+                    btn_deb_cnt &lt;= 0;
+                end if;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>红外通道不做防抖，是有理由的</b>：ir_sync 的接收判决本身就是"低电平持续 2 ms 才触发"——时间确认已经在上一级做过了，这里再做一遍是浪费。而按键是机械触点，必须自己防抖。<b>同样的"收到就启动"，防抖责任在哪一级，取决于上游信号的性质</b>——这个对比是面试的好素材。</li>
+      <li><b>按键防抖 1000000 拍 = 20 ms</b>：按住 20 ms 才认。写成"计数到才算"而不是"采样两次一致"，两种都是合法防抖。</li>
+      <li><b>tx_trigger 只在按键通道拉高</b>——所以同一套代码烧到两辆车：按了键的那辆自动成为领车（发红外），收到红外的那辆自动成为跟车（不再转发）。<b>角色是行为涌现出来的，不是配置出来的</b>。这也是注释"跟随车被唤醒后不需要发送信号给别人"的含义。</li>
+      <li><b>启动瞬间预装满冷却计时器</b>：车刚起步时大概率还压在起点线上（全黑），不预装冷却就会<b>刚出发就误计一圈</b>。1 s 冷却足够车冲出起点线。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">三、圈数计数：三重条件缺一不可</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">tracking_logic.vhd</span><span class="rg">139–161 圈数计数</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="139">                -- === 圈数计数逻辑 ===
+                if cooldown_timer &gt; 0 then ①
+                    cooldown_timer &lt;= cooldown_timer - 1;
+                    black_duration_cnt &lt;= 0;
+                    lap_count_flag &lt;= '0';
+                else
+                    if (sensor_in = "11111111" or sensor_in = "01111110") then ②
+                        if black_duration_cnt &lt; BLACK_FILTER_TIME then
+                            black_duration_cnt &lt;= black_duration_cnt + 1;
+                        else
+                            if lap_count_flag = '0' and state_lap &lt; 3 then ③
+                                state_lap &lt;= state_lap + 1;
+                                lap_count_flag &lt;= '1';
+                            elsif state_lap = 3 then
+                                state_lap &lt;= 4; 
+                                lap_count_flag &lt;= '1';
+                            end if;
+                            cooldown_timer &lt;= COOLDOWN_MAX; ④
+                        end if;
+                    else
+                        black_duration_cnt &lt;= 0;
+                    end if;
+                end if;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>条件一：冷却期（1 s）</b>——计完一圈后一秒内不再计。跨过线时车头车尾会先后压线，同一次过线可能让 8 路全黑维持几百毫秒（车长 ÷ 车速），1 s 冷却把"同一条线"整个盖住。</li>
+      <li><b>条件二：全黑持续 15 ms</b>——<code>"11111111"</code>（8 路全黑）或 <code>"01111110"</code>（外圈两路白、中间全黑，容忍边缘路没压准）。瞬间的传感器毛刺撑不过 15 ms。注意全黑码<b>同时是循迹表里的"直行"码</b>——计圈和循迹对同一信号的两种解读。</li>
+      <li><b>条件三：圈内锁存 lap_count_flag</b>——冷却期结束到下一次过线之间，只允许计一次。它挡住的是"冷却刚结束、车还没完全离开线"的边角情况：冷却清零了 black_duration_cnt，但 lap_count_flag 还记得这一圈计过了。</li>
+      <li><b>state_lap=3 时跳到 4</b>——第四段不叫"第四圈"而叫"完成态"，进入后速度归零、蜂鸣器响。注意 3→4 用的条件和 1→2、2→3 完全一样，没有特殊化——<b>四圈的一致性就是靠不特殊化保证的</b>。</li>
+    </ul>
+
+    <figure class="fig io-hide">
+    <svg viewBox="0 0 680 300" role="img" aria-label="圈数三重条件">
+      <defs>
+        <marker id="l1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#46515f"/></marker>
+        <marker id="l2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9ad86a"/></marker>
+      </defs>
+
+      <rect x="250" y="14" width="180" height="40" rx="8" fill="#1a2230" stroke="#6aa9ff"/>
+      <text class="t1" x="340" y="39" text-anchor="middle">冷却期结束了吗？</text>
+      <path d="M430 34 H560 V70" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#l1)"/>
+      <path d="M340 54 V86" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#l1)"/>
+      <text class="t3" x="352" y="76">是</text>
+      <text class="t3" x="498" y="26">否 → 等着倒数</text>
+
+      <rect x="250" y="90" width="180" height="40" rx="8" fill="#1a2230" stroke="#6aa9ff"/>
+      <text class="t1" x="340" y="112" text-anchor="middle">8 路全黑？</text>
+      <text class="t3" x="450" y="112">（11111111 / 01111110）</text>
+      <path d="M340 130 V160" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#l1)"/>
+      <text class="t3" x="352" y="150">是</text>
+      <path d="M250 110 H80 V180 H246" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#l1)"/>
+      <text class="t3" x="100" y="100">否 → 清零持续计数</text>
+
+      <rect x="250" y="164" width="180" height="40" rx="8" fill="#241d12" stroke="#f2b25c"/>
+      <text class="t1" x="340" y="186" text-anchor="middle">持续满 15 ms？</text>
+      <path d="M340 204 V234" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#l1)"/>
+      <text class="t3" x="352" y="224">是</text>
+      <path d="M430 184 H560 V224 H452" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#l1)"/>
+      <text class="t3" x="500" y="176">否 → 继续数</text>
+
+      <rect x="250" y="238" width="180" height="40" rx="8" fill="#1a2230" stroke="#6aa9ff"/>
+      <text class="t1" x="340" y="260" text-anchor="middle" style="font-size:12.5px">这一圈还没计过？</text>
+      <path d="M340 278 V294" fill="none" stroke="#46515f" stroke-width="0"/>
+      <path d="M250 258 H110 V294" fill="none" stroke="#9ad86a" stroke-width="1.8" marker-end="url(#l2)"/>
+      <text class="t2" x="178" y="288" style="fill:#bfe49a">都满足 → state_lap + 1</text>
+      <path d="M430 258 H570 V294" fill="none" stroke="#46515f" stroke-width="1.4"/>
+      <text class="t3" x="500" y="252">否 → 锁存挡住</text>
+    </svg>
+    <figcaption>三个否定出口分别回到"继续数/清零/等待"——任何一个条件被去掉，都能构造出一个让它误计的场景。</figcaption>
+    </figure>
+
+    <div class="calc io-hide">三个时间常量的来历：
+15 ms 确认 = 跨过线宽的时间下限（车速 ≈ 0.3 m/s ÷ 线宽 1.8 cm ≈ 6 ms，取 2.5 倍余量）
+1 s 冷却 = 一圈内两次压线的最小间隔（圈时 ≈ 20 s，取 1/20 也留足）
+5000000 拍 Y 锁定 = 100 ms（车速 × 车长量级，推断为实测调出）</div>
+
+    <div class="qa io-hide">
+      <div class="qi"><p class="q">去掉任何一个条件会怎样？</p><p class="a">去掉 15 ms：毛刺误计。去掉 1 s 冷却：车头车尾分两次压线，一条线计两次。去掉锁存：冷却刚结束、车尾还在线上，同一条线再来一次。三个条件分别对付<b>毛刺、车长、边界</b>三种物理来源的误判——这是"对着现象设计"而不是"拍脑袋加滤波"。</p></div>
+      <div class="qi"><p class="q">为什么 state_lap 用 integer 不用自定义枚举？</p><p class="a">枚举（type lap_t is (IDLE, LAP1, ...)）可读性更好，综合器自动编码。这里用 integer range 0 to 4，好处是 <b>state_lap+1 这种推进可以直接写算术</b>、范围约束自带保护（越界即仿真报错）。两种都对，讲的时候说"知道枚举更规范，这里图算术方便"。</p></div>
+    </div>
+
+  </div>
+</section>
+<!-- ============ 07 决策下 ============ -->
+<section id="logicb">
+  <div class="sec-h"><span class="num">07</span><h2>决策下：循迹、跟随与优先级<small>一个进程里的四套并行逻辑，用 variable 串成一条流水线</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">行驶中每一拍，这个进程都要回答同一个问题：<b>左右轮各转多快？</b>答案由四套逻辑投票决定——循迹查表给基准，跟随比例缩放它，路口锁定冻结它，场地补丁覆盖它。而让这四步<b>在一个时钟沿内完成</b>的，是 variable。</p>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">一、进程头：variable 登场</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">tracking_logic.vhd</span><span class="rg">61–66 进程声明</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="61">    process(clk, rst_n)
+        variable speed_l_tmp : integer range 0 to 100; ①
+        variable speed_r_tmp : integer range 0 to 100;
+        variable track_speed_l : integer range 0 to 100;
+        variable track_speed_r : integer range 0 to 100;
+        variable follow_ratio  : integer range 0 to 130 := 100;
+    begin</code></pre>
+    </div>
+
+    <div class="cal irq io-hide"><span class="t">核心考点</span><b>signal 在进程结束时才更新，variable 赋值立即生效</b>。这个进程把"算循迹速度 → 乘跟随比例 → 被强制左转覆盖 → 写给输出 signal"放在<b>同一个时钟沿</b>里完成——每一步都读得到上一步刚写的值。如果全用 signal，每步要等下一拍，一次决策要 3–4 拍（60–80 ns 延迟倒无所谓，但逻辑要拆成多个进程或状态机，复杂度暴涨）。<b>这就是"信号 vs 变量"在这个项目里最实在的用法</b>：变量 = 进程内的草稿纸，信号 = 进程间的传声筒。</div>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">二、循迹查表：256 种组合，21 个有效码</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">tracking_logic.vhd</span><span class="rg">163–195 Y锁定与查表</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="163">                -- === Y字路口锁定逻辑 ===
+                eff_sensor &lt;= sensor_in;
+                if sensor_in = Y_JUNC_TRIG then ①
+                    y_junction_lock &lt;= '1';
+                    y_lock_cnt &lt;= 5000000;
+                elsif y_lock_cnt &gt; 0 then
+                    y_junction_lock &lt;= '1';
+                    y_lock_cnt &lt;= y_lock_cnt - 1;
+                else
+                    y_junction_lock &lt;= '0';
+                end if;
+        
+                -- === 循迹速度计算 ===
+                case eff_sensor is
+                    when "00011000" | "00010000" | "00001000" | "00111100" =&gt; ②
+                        track_speed_l := BASE_SPD; track_speed_r := BASE_SPD; last_act &lt;= 0;
+                    when "00100000" | "00110000" | "01100000" | "10000000" | "11000000" | "11100000" =&gt; 
+                        track_speed_l := TURN_HI; track_speed_r := TURN_LO; last_act &lt;= 1; ③
+                    when "00000100" | "00000110" | "00001100" | "00000010" | "00000001" | "00000111" =&gt;
+                        track_speed_l := TURN_LO; track_speed_r := TURN_HI; last_act &lt;= 2;
+                    when "11111111" | "01111110" =&gt;
+                        track_speed_l := BASE_SPD; track_speed_r := BASE_SPD; ④
+                    when "00000000" =&gt; ⑤
+                        if last_act = 1 then     
+                            track_speed_l := TURN_HI; track_speed_r := ZERO; 
+                        elsif last_act = 2 then  
+                            track_speed_l := ZERO; track_speed_r := TURN_HI;
+                        else                     
+                            track_speed_l := BASE_SPD; track_speed_r := BASE_SPD;
+                        end if;
+                    when others =&gt;
+                        track_speed_l := BASE_SPD; track_speed_r := BASE_SPD;
+                end case;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>Y 路口锁定是个"自锁"结构</b>：看到特征码就把 y_lock_cnt 装满 5000000（100 ms），此后纯靠倒数维持锁定——即使特征码早就消失。100 ms 是"车头过完路口"的时间量级。</li>
+      <li><b>直行组四个码</b>：中间两路压线（00011000）、单侧中路（00010000/00001000）、宽压线（00111100，过线瞬间）。注意查的是 <code>eff_sensor</code>（上一拍的采样）而不是当拍——<b> deliberate 还是 bug？</b>eff_sensor 是 signal，赋值下一拍才可见，所以查表用的永远是 1 拍前的画面（20 ns，无实际影响）。</li>
+      <li><b>左偏组六码、右偏组六码</b>：从"刚偏一点"（00100000）到"偏得很狠"（11100000）都是同一个动作（60/15 差速）。<b>查表查不出"偏多少"，只查得出"偏没偏、朝哪偏"</b>——这就是分档循迹的精度天花板。</li>
+      <li><b>全黑 = 直行</b>：过线瞬间（车体全部压在黑线上）不要慌，保持直速冲过去——圈数计数那边自会处理这个信号。</li>
+      <li><b>全白 = 按记忆找线</b>：last_act=1（上次左偏）就继续左转差速，else 同理。丢线时"继续做上次的事"是<b>惯性策略</b>——线大概率还在原来那侧。<span class="hl-r">注意右偏丢线时左轮置 ZERO</span>，比正常差速（15）更狠——丢线是紧急状态，动作要大。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">三、跟随四档与优先级合成</h3>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">tracking_logic.vhd</span><span class="rg">197–231 跟随与合成</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="197">                -- === 跟随速度调整 ===
+                if distance_mm = 0 or distance_mm &gt; FOLLOW_TRACK_DIST then ①
+                    follow_ratio := NORMAL_RATIO;
+                elsif distance_mm &lt; FOLLOW_STOP_DIST then
+                    follow_ratio := 0;
+                elsif distance_mm &lt; FOLLOW_DEC_DIST then
+                    follow_ratio := DEC_RATIO;
+                elsif distance_mm &gt; FOLLOW_ACC_DIST then
+                    follow_ratio := ACC_RATIO;
+                else
+                    follow_ratio := NORMAL_RATIO;
+                end if;
+                
+                -- === 优先级逻辑 ===
+                if y_junction_lock = '1' then ②
+                    speed_l_tmp := track_speed_l;
+                    speed_r_tmp := track_speed_r;
+                else
+                    if follow_ratio = 0 then
+                        speed_l_tmp := 0;
+                        speed_r_tmp := 0;
+                    else
+                        speed_l_tmp := (track_speed_l * follow_ratio) / 100; ③
+                        speed_r_tmp := (track_speed_r * follow_ratio) / 100;
+                        if speed_l_tmp &gt; 100 then speed_l_tmp := 100; end if;
+                        if speed_r_tmp &gt; 100 then speed_r_tmp := 100; end if;
+                    end if;
+                end if;
+                
+                -- === 第二圈强制左转 ===
+                if state_lap = 2 and cooldown_timer &lt; 40000000 then ④
+                    if (sensor_in(1) = '1') and (sensor_in(7)='0' and sensor_in(6)='0')then
+                        speed_r_tmp := 80; speed_l_tmp := 10; last_act &lt;= 1;
+                    end if;
+                end if;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>距离 0 归入"跟丢"</b>：超声模块 echo 丢失时输出 0，这里把 0 和 &gt;400 合并成"看不见前车 → 回正常速度"。哨兵值复用了物理语义。</li>
+      <li><b>优先级：路口锁定 &gt; 停车 &gt; 比例缩放</b>。锁定期间完全无视超声——否则前车正好挡在路口，跟车一减速就卡死在路口。100 ms 窗口足够车头越过路口。</li>
+      <li><b>乘法除法在同一拍</b>：<code>track_speed_l * 130 / 100</code>——55×130÷100 = 71。变量立即生效让"循迹速度"可以直接当被乘数。除以 100 会综合出除法器，好在操作数小（≤13000÷100），时序能过。</li>
+      <li><span class="hl-a">第二圈强制左转是"场地补丁"</span>：state_lap=2 且启动后 0.2 s（冷却 1 s 减 0.8 s）内，看到 bit1 压线就强制 80/10 差速。这是为了应付具体场地的岔路——<b>通用逻辑 + 一个场地特定的覆盖项</b>，面试时老实说它是 hack，以及为什么它不该出现在通用模块里。</li>
+    </ul>
+
+    <figure class="fig io-hide">
+    <svg viewBox="0 0 680 240" role="img" aria-label="决策数据流">
+      <defs>
+        <marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#46515f"/></marker>
+      </defs>
+
+      <rect x="18" y="20" width="150" height="46" rx="8" fill="#12211f" stroke="#35d0ba"/>
+      <text class="t2" x="93" y="39" text-anchor="middle">eff_sensor（8 路）</text>
+      <text class="t3" x="93" y="56" text-anchor="middle">查表 case</text>
+
+      <rect x="18" y="96" width="150" height="46" rx="8" fill="#241d12" stroke="#f2b25c"/>
+      <text class="t2" x="93" y="115" text-anchor="middle">distance_mm</text>
+      <text class="t3" x="93" y="132" text-anchor="middle">四档 → follow_ratio</text>
+
+      <rect x="18" y="172" width="150" height="46" rx="8" fill="#1a2230" stroke="#6aa9ff"/>
+      <text class="t2" x="93" y="191" text-anchor="middle">Y_JUNC_TRIG 命中？</text>
+      <text class="t3" x="93" y="208" text-anchor="middle">100 ms 自锁</text>
+
+      <rect x="240" y="88" width="150" height="56" rx="8" fill="#1c1a26" stroke="#c08cf5"/>
+      <text class="t2" x="315" y="108" text-anchor="middle">variable 流水线</text>
+      <text class="t3" x="315" y="125" text-anchor="middle">track × ratio ÷ 100</text>
+      <text class="t3" x="315" y="139" text-anchor="middle">→ clamp 到 100</text>
+
+      <rect x="440" y="88" width="130" height="56" rx="8" fill="#1a2230" stroke="#3a4553"/>
+      <text class="t2" x="505" y="108" text-anchor="middle">第二圈补丁</text>
+      <text class="t3" x="505" y="125" text-anchor="middle">可覆盖 80/10</text>
+
+      <rect x="440" y="14" width="222" height="46" rx="8" fill="#16211a" stroke="#9ad86a"/>
+      <text class="t2" x="551" y="33" text-anchor="middle" style="fill:#bfe49a">speed_l / speed_r（signal 输出）</text>
+      <text class="t3" x="551" y="48" text-anchor="middle">进程结束时才对外可见</text>
+
+      <path d="M168 43 C 210 43, 210 100, 238 108" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#b1)"/>
+      <path d="M168 119 C 205 119, 205 120, 238 118" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#b1)"/>
+      <path d="M168 195 C 210 195, 210 140, 238 128" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#b1)"/>
+      <path d="M390 116 H438" fill="none" stroke="#46515f" stroke-width="1.4" marker-end="url(#b1)"/>
+      <path d="M570 88 V62" fill="none" stroke="#9ad86a" stroke-width="1.6" marker-end="url(#b1)"/>
+    </svg>
+    <figcaption>三路输入在 variable 流水线里合成，最终写到 signal 输出。全程一个时钟沿——这是"进程内顺序、进程外并行"的教科书示范。</figcaption>
+    </figure>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">四、跟随四档：为什么不是连续控制</h3>
+
+    <div class="tblwrap io-hide">
+    <table>
+      <thead><tr><th>距离</th><th>follow_ratio</th><th>物理动作</th><th>对应的误判风险</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">0 或 &gt;400 mm</td><td class="mono">100%</td><td class="green">跟丢 → 回正常速度自循迹</td><td>echo 丢失（=0）混进"太远"——语义恰好相同</td></tr>
+        <tr><td class="mono">200–400 mm</td><td class="mono">130%</td><td class="amber">加速追</td><td>上界 400 宽松——超声量程边缘抖动大</td></tr>
+        <tr><td class="mono">100–200 mm</td><td class="mono">100%</td><td class="green">常态区间</td><td>死区——四档之间天然留了缓冲带</td></tr>
+        <tr><td class="mono">60–100 mm</td><td class="mono">50%</td><td class="amber">减速</td><td>下界 60 与停车档只差 40 mm</td></tr>
+        <tr><td class="mono">&lt;60 mm</td><td class="mono">0%</td><td class="red">停车</td><td>真停——等前车走远自动恢复</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="cal tip"><span class="t">为什么四档不用 PID</span>HC-SR04 每 20 ms 才给一个读数，且抖动大（厘米级跳变）。连续 PID 拿这种输入会<b>追着噪声跑</b>——积分项来回摆，输出永不停。分档 + 档间死区（100–200 的常态带就是死区）对噪声天然免疫：读数在档边界附近抖，顶多在两档之间切换，而两档输出差 50%，一两次抖动不改变宏观行为。<b>采样慢、噪声大的传感器，配低分辨率执行器，离散分档是最稳的工程解</b>。</div>
+
+    <div class="qa io-hide">
+      <div class="qi"><p class="q">全白丢线时为什么"记忆方向"而不是停车？</p><p class="a">全白最常见的原因是车冲过了线（动态丢线），不是真离轨。停车就永远停在那了；按 last_act 继续转，车头会画弧扫回线上。代价：如果是真脱轨，车会原地画圈回不来——这个系统没有倒车，找回策略做不了闭环，是已声明的局限。</p></div>
+      <div class="qi"><p class="q">查表和"算偏差量"（重心法）怎么选？</p><p class="a">8 路开关量没有天然的偏差量——要做重心法得先给每路加权求平均，再做 PID。查表直接把 21 个有效组合映射成动作，<b>省资源、好调、行为完全可预测</b>（每种输入都能在表里查到答案）。代价是没有中间档——"偏 5°"和"偏 30°"是同一个动作。传感器升级到模拟量（如 8 路 ADC）才值得上连续控制。</p></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ 08 PWM ============ -->
+<section id="pwm">
+  <div class="sec-h"><span class="num">08</span><h2>motor_pwm 与蜂鸣器<small>36 行 PWM + 顶层里的两段蜂鸣器逻辑</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">决策输出的是 0–100 的<b>速度数字</b>，电机认的是<b>占空比波形</b>——motor_pwm 就是这中间的翻译官。它被例化了两次（左右轮各一），这是"模块复用"最直白的样子。</p>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">motor_pwm.vhd</span><span class="rg">13–36 全部逻辑</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="13">architecture Behavioral of motor_pwm is
+    constant PERIOD : integer := 50000; -- 1kHz 频率 ①
+    signal cnt : integer range 0 to PERIOD := 0;
+begin
+    process(clk, rst_n)
+    begin
+        if rst_n = '0' then
+            cnt &lt;= 0;
+            pwm_out &lt;= '0';
+        elsif rising_edge(clk) then
+            if cnt &lt; PERIOD - 1 then
+                cnt &lt;= cnt + 1;
+            else
+                cnt &lt;= 0;
+            end if;
+
+            if cnt &lt; (duty * 500) then ②
+                pwm_out &lt;= '1';
+            else
+                pwm_out &lt;= '0';
+            end if;
+        end if;
+    end process;
+end Behavioral;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>50000 拍 = 1 kHz PWM 周期</b>：50 MHz ÷ 50000。1 kHz 对有刷直流电机足够——电枢的机械惯性行为就是低通滤波器，1 kHz 的纹波到转轴上已经磨平。</li>
+      <li><b>duty × 500 = duty% × 50000</b>：把 0–100 的百分数换算成 0–50000 的拍数。duty=55 → 前 27500 拍高电平。<span class="hl-a">乘法每个时钟沿都算</span>——duty 是外部输入，综合器会生成一个小乘法器（8 位 × 常数 500，实为移位相加：500 = 256+128+64+32+16+4），代价可接受。</li>
+      <li><b>占空比每拍重算</b>：cnt 在周期中段时 duty 变了，输出的高电平长度当拍就跟着变——不需要等下个周期对齐。简单，代价是理论上的毛刺（占空比中间跳变），对电机无感。</li>
+    </ul>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">蜂鸣器：顶层里唯一的业务逻辑</h3>
+
+    <p>停车鸣笛没做成模块，直接写在顶层。两段进程：<b>响多久</b>和<b>怎么响</b>：</p>
+
+    <div class="code">
+      <div class="code-h"><span class="nm">smart_car.vhd</span><span class="rg">127–171 蜂鸣器两进程</span><span class="sp"></span><button class="copy">复制</button></div>
+      <pre><code data-start="127">    process(sys_clk, sys_rst_n)
+    begin
+        if sys_rst_n = '0' then
+            buzzer_en &lt;= '0';
+            buzzer_has_ring &lt;= '0';
+            buzzer_dur_cnt &lt;= 0;
+        elsif rising_edge(sys_clk) then
+            -- 触发条件：1. 圈数标识=11 2. 左电机速度=0（停车） 3. 未响过
+            if w_lap_info = "11" and w_speed_l = 0 and buzzer_has_ring = '0' then ①
+                buzzer_en &lt;= '1';
+                if buzzer_dur_cnt &lt; BUZZER_RING_DUR then
+                    buzzer_dur_cnt &lt;= buzzer_dur_cnt + 1;
+                else
+                    buzzer_en &lt;= '0';
+                    buzzer_has_ring &lt;= '1'; -- 标记已响，不再重复
+                    buzzer_dur_cnt &lt;= 0;
+                end if;
+            else
+                buzzer_en &lt;= '0';
+            end if;
+        end if;
+    end process;
+
+    -- 1kHz方波生成（驱动蜂鸣器发声）
+    process(sys_clk, sys_rst_n)
+    begin
+        if sys_rst_n = '0' then
+            ...
+        elsif rising_edge(sys_clk) then
+            if buzzer_en = '1' then
+                if buzzer_cnt &gt;= 25000 then -- 50MHz/1kHz/2 = 25000
+                    buzzer_cnt &lt;= 0;
+                    buzzer_pwm &lt;= not buzzer_pwm; ②
+                else
+                    buzzer_cnt &lt;= buzzer_cnt + 1;
+                end if;
+            else
+                buzzer_cnt &lt;= 0;
+                buzzer_pwm &lt;= '0'; -- 未使能时关闭
+            end if;
+        end if;
+    end process;</code></pre>
+    </div>
+
+    <ul class="anno">
+      <li><b>触发条件是三个信号的与</b>：圈数标识 = "11"、左轮速度 = 0、没响过。第三个条件就是"事件只发生一次"的硬件实现——软件里一个 bool 标志的事，硬件也是一个触发器。<span class="hl-r">但 w_lap_info="11" 同时匹配第 3 圈和完成态——第 10 节展开这个 bug</span>。</li>
+      <li><b>方波 = 每半周期翻转一次</b>：1 kHz 方波的翻转频率是 2 kHz，所以计 25000 拍（50 MHz ÷ 2000）翻一次。这是"产生方波"和"产生 PWM"的区别：PWM 数的是高电平宽度，方波数的是翻转间隔。</li>
+    </ul>
+
+    <div class="calc io-hide">两个模块的"频率算术"放一起记：
+PWM：50 MHz ÷ 50000 拍 = <span class="r">1 kHz</span>（PERIOD=50000，占空比 = duty×500 / 50000）
+蜂鸣器：50 MHz ÷ 25000 拍 = 2 kHz 翻转率 = <span class="r">1 kHz 方波</span>
+超声：50 MHz ÷ 1000000 拍 = 50 Hz 触发率 = <span class="r">每 20 ms 测一次</span>
+红外载波：50 MHz ÷ 657 拍 = 76 kHz 翻转率 = <span class="r">38 kHz 方波</span></div>
+
+    <div class="qa io-hide">
+      <div class="qi"><p class="q">为什么 PWM 1 kHz，电机不会啸叫吗？</p><p class="a">1 kHz 在人耳听觉范围内，绕组确实会振动发声——但被车体噪声盖住了。消费类产品（无人机、散热风扇）会提到 20 kHz 以上避开听觉。课设选 1 kHz 是因为低频下 MOS 管开关损耗小、驱动简单。<b>能说出"知道啸叫、知道为什么忍"就是好答案</b>。</p></div>
+    </div>
+
+  </div>
+</section>
+<!-- ============ 09 全程推演 ============ -->
+<section id="walk">
+  <div class="sec-h"><span class="num">09</span><h2>双车协同全程推演<small>把 03–08 节的零件串成一次完整的发车</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">现在忘掉模块，只看两辆车。<b>从领车的手指按下按键，到跟车停稳鸣笛</b>，中间发生的一切都在下面这条时间线上——每一步都标了"谁在推动"。</p>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">第一幕：发车（两车，0 → 约 1 秒）</h3>
+
+    <div class="tline">
+      <div class="st t"><b>t=0 ｜ 领车：手指按下 key_start</b><p>机械触点闭合，start_btn 拉低。tracking_logic 的状态 0 开始数 btn_deb_cnt——每拍 +1，目标 1000000。</p></div>
+      <div class="st t"><b>t=20 ms ｜ 防抖通过，领车身份确定</b><p>state_lap 0→1；<b>同一拍</b> tx_trigger 拉高一拍——只有按键启动才会发红外，这辆车从此是领车。冷却计时器预装满 50000000。</p></div>
+      <div class="st v"><b>t=20 ms ｜ ir_sync 收到 tx_trigger</b><p>发送状态机 IDLE → SEND_9MS：ir_tx_pin 接通 38 kHz 载波发生器，红外管以 38 kHz 闪烁，持续 9 ms。</p></div>
+      <div class="st v"><b>t=29 ms ｜ 空中传播 → 跟车 VS1838 解调</b><p>跟车接收头看到 38 kHz 闪烁，输出拉低。ir_sync 接收进程开始数 rx_cnt。</p></div>
+      <div class="st g"><b>t=31 ms ｜ 跟车判决触发（2 ms 阈值）</b><p>rx_cnt 数到 100000，rx_detect 输出<b>单拍脉冲</b>。tracking_logic 状态 0 看到脉冲：state_lap 0→1，<b>跳过防抖</b>（上游已经做过时间确认），tx_trigger 保持 0（跟车不转发）。冷却计时器同样预装满。</p></div>
+      <div class="st"><b>t≈31 ms 起 ｜ 两车同时起步</b><p>state_lap=1，每拍走"圈数计数 → 循迹查表 → 跟随四档 → 优先级合成 → 输出速度"的完整流水线。两车的 eff_sensor 都从 8 路灰度来，motor_pwm 开始输出 1 kHz PWM。</p></div>
+    </div>
+
+    <div class="snap io-hide">
+      <div>领车 state_lap</div><div><b>1</b>（按键通道，tx_trigger=1 一拍）</div>
+      <div>跟车 state_lap</div><div><b>1</b>（红外通道，跳过防抖）</div>
+      <div>两车 cooldown_timer</div><div><b>50000000 → 递减中</b>（防起步误计圈）</div>
+      <div>两车 follow_ratio</div><div>100%（距离 &gt;400，跟丢态）</div>
+      <div>红外 rx_detect</div><div>回到 0（单拍脉冲已消费）</div>
+    </div>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">第二幕：稳态巡航（1 秒 → 数分钟）</h3>
+
+    <div class="tline">
+      <div class="st"><b>每 0.8 ms ｜ 一帧新灰度</b><p>sensor_scanner 扫完 8 路推一帧 data_ready。循迹查表用它。直行时输出 55/55，偏差时 60/15。</p></div>
+      <div class="st"><b>每 20 ms ｜ 一次测距</b><p>hc_sr04 发 trig、收 echo、更新 distance_mm。跟车的 follow_ratio 随之在 50%–130% 之间切档；&lt;60 mm 就地停车，前车走远自动恢复。</p></div>
+      <div class="st a"><b>每次过线（约每 20 s）｜ 计一圈</b><p>8 路全黑持续 15 ms → 三重条件全过 → state_lap+1，冷却 1 s。led_lap 指示灯跟着变化。</p></div>
+      <div class="st r"><b>每次过 Y 字路口 ｜ 锁定 100 ms</b><p>查到 "00011000" 特征码（Y 路口形态）→ y_junction_lock 自锁 → 跟车<b>无视超声</b>，只按循迹速度过路口——防止前车挡道导致卡死。</p></div>
+    </div>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">第三幕：收车</h3>
+
+    <div class="tline">
+      <div class="st g"><b>第 4 次过线 ｜ state_lap 3→4</b><p>进入完成态：速度永远输出 0，两车滑行停下。</p></div>
+      <div class="st g"><b>停车拍 ｜ 蜂鸣器触发</b><p>顶层判定 w_lap_info="11" 且 w_speed_l=0 且未响过 → buzzer_en=1，1 kHz 方波驱动蜂鸣器 1 秒（50000000 拍），然后 buzzer_has_ring=1，永不再响。</p></div>
+    </div>
+
+    <div class="cal warn io-hide"><span class="t">推演时顺手抓到的问题</span>①蜂鸣器条件里的 <code>w_lap_info="11"</code>：<b>第 3 圈进行中它也输出 "11"</b>（见第 10 节 bug #1）——第三圈中途若被超声停车，会提前鸣笛且之后真完成时反而不响。②跟车比领车晚 11 ms 起步（20 ms 防抖 + 9 ms 载波 + 2 ms 判决的差值），<b>这 11 ms 就是整套握手的时间成本</b>。</div>
+
+  </div>
+</section>
+
+<!-- ============ 10 真问题 ============ -->
+<section id="bugs">
+  <div class="sec-h"><span class="num">10</span><h2>代码里的五个真问题<small>逐行读代码读出来的——面试时能自己指出，比藏着强十倍</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">以下五个问题全部来自源码原文，<b>不是假设</b>。它们的共同点是：实测都没炸，但每一个都有一条"如果条件再苛刻一点就炸"的路。<b>面试官问"这个项目有什么可以改进的"时，按这个顺序讲</b>。</p>
+
+    <div class="blk">
+      <h4>#1 w_lap_info 的 "11" 歧义 —— 蜂鸣器会提前响</h4>
+      <div class="in">
+        <div class="code">
+          <div class="code-h"><span class="nm">tracking_logic.vhd</span><span class="rg">59 debug_lap 编码</span><span class="sp"></span><button class="copy">复制</button></div>
+          <pre><code data-start="59">    debug_lap &lt;= std_logic_vector(to_unsigned(state_lap, 2)) when state_lap &lt; 4 else "11";</code></pre>
+        </div>
+        <p><b>推演</b>：state_lap=3 时 to_unsigned(3,2) = "11"；state_lap=4 时 else 分支也是 "11"。<b>第三圈进行中和跑完，输出完全一样</b>。蜂鸣器条件是 <code>w_lap_info="11" and w_speed_l=0</code>——第三圈中途只要车被超声逼停一次（&lt;60 mm），蜂鸣器就提前响，且 buzzer_has_ring 锁定后，真跑完时反而不响。</p>
+        <p><b>为什么实测没炸</b>：跟车与前车距离管理得住，第三圈没触发过 &lt;60 mm 停车。<b>正确写法</b>：debug_lap 用 3 位（0–4 需要 3 根线），或让 "11" 只属于状态 4——比如 state_lap=3 时输出 "10"（2 位只能表示 0–3，干脆把"完成"编码成全 1 且让状态 3 不输出全 1：用 00/01/10/11 分别对应 1/2/3/完成，等待态也归入 00）。</p>
+      </div>
+    </div>
+
+    <div class="blk">
+      <h4>#2 stop_req 接而未用 —— 接了设备的空插座</h4>
+      <div class="in">
+        <p><b>事实</b>：hc_sr04 输出 stop_flag（&lt;60 mm 时拉高），顶层把它连到 tracking_logic 的 stop_req 端口——<b>但 tracking_logic 的进程体里一次都没引用 stop_req</b>。停车实际是决策模块拿 <code>distance_mm &lt; 60</code> 自己判的。</p>
+        <p><b>影响</b>：功能上无（两处判的是同一个数），但它是一次<b>接口演化的化石</b>——推测早期设计是"超声模块直接给停车信号"，后来跟随逻辑改成四档，停车并进了 follow_ratio=0，这根线就成了遗迹。<b>讲法</b>：端口留下没问题，但要能说出"这根线现在是死的，为什么当时留着"——接口留余量 vs 死代码，一线之隔。</p>
+      </div>
+    </div>
+
+    <div class="blk">
+      <h4>#3 ir_sync 的两级同步器声明了没用 —— 亚稳态敞口</h4>
+      <div class="in">
+        <div class="code">
+          <div class="code-h"><span class="nm">ir_sync.vhd</span><span class="rg">41–43 vs 123</span><span class="sp"></span><button class="copy">复制</button></div>
+          <pre><code data-start="41">    signal rx_sync_0  : std_logic := '1';
+    signal rx_sync_1  : std_logic := '1'; -- 打两拍消除亚稳态
+    ...
+                if ir_rx_pin = '0' then   -- ← 实际直接用了原始引脚</code></pre>
+        </div>
+        <p><b>推演</b>：ir_rx_pin 是异步外部信号（红外接收头的输出与 50 MHz 时钟无相位关系）。直接在时钟沿采样，违反建立/保持窗口时触发器输出亚稳态，这个中间电平传进 rx_cnt 比较逻辑，理论上可能误判。超声模块的 echo <b>做了</b>两级同步（echo_sync），红外这里没做——<b>同一个项目、同类异步输入、两种待遇</b>。</p>
+        <p><b>为什么实测没炸</b>：亚稳态概率本来就低（每拍约 10⁻⁶ 量级以下），且启动信号只收一次、持续 9 ms——暴露窗口极小。<b>正确写法</b>：把两处 <code>ir_rx_pin</code> 换成 <code>rx_sync_1</code>，三行代码的事。这是五个问题里<b>修复成本最低、面试价值最高</b>的一个。</p>
+      </div>
+    </div>
+
+    <div class="blk">
+      <h4>#4 w_speed_r 的 range 是 0 to 5000 —— 复制粘贴的化石</h4>
+      <div class="in">
+        <p><b>事实</b>：顶层里 w_speed_l 是 <code>range 0 to 100</code>，w_speed_r 是 <code>range 0 to 5000</code>——右轮明显是从 w_distance_mm（0 to 5000）那行复制过来改漏的。实际速度值 ≤100，所以<b>侥幸不越界</b>。</p>
+        <p><b>什么时候会炸</b>：仿真里任何一个分支给右轮超过 5000，仿真器立刻报整数越界停下；综合后 FPGA 上则是高位被截（无保护）。它同时也是个<b> lint 提醒</b>：VHDL 的 range 约束是好东西，但约束错了比没有更危险——它给了你"这变量查过了"的错觉。</p>
+      </div>
+    </div>
+
+    <div class="blk">
+      <h4>#5 echo 卡高 100 ms 会溢出；echo 丢失则距离冻结</h4>
+      <div class="in">
+        <p><b>推演 A（溢出）</b>：echo_cnt 的 range 是 0 to 5000000（=100 ms）。如果 echo 引脚被干扰或器件故障卡在高电平，计数器数到上限后越界——仿真直接报错；上板则是行为未定义。<b>正确写法</b>：加 <code>if echo_cnt &lt; 5000000 then echo_cnt &lt;= echo_cnt+1</code> 的饱和保护，并把"数满"解释为无效测量。</p>
+        <p><b>推演 B（冻结）</b>：distance_mm 只在 echo 拉低的那一拍更新——某次测量 echo 丢失时，输出保持上一个旧值。跟车会按 20 ms 前的距离继续跑。决策端 <code>distance_mm=0</code> 的哨兵只覆盖"从未测到"，覆盖不了"测到一半丢了"。<b>正确写法</b>：加超时标志，超时强制 distance 归零（正好落进"跟丢"分支）。</p>
+        <p class="hl-t" style="margin:6px 0 0">这两个都属于"实测场地干净所以没炸"的典型——把它们讲清楚，就是在展示<b>对失效模式的想象力</b>，这恰恰是硬件岗位最看重的。</p>
+      </div>
+    </div>
+
+    <div class="cal good"><span class="t">怎么在面试里用</span>不要说"我们的代码有问题"——说"<b>后来重读代码时我发现了五个可以在下一次迭代修掉的问题</b>"，然后按"现象推演 → 为什么当时没炸 → 怎么修"三段讲一两个。主动权在你手里：这些是<b>你自己 code review 出来的</b>，不是被人挑出来的。</div>
+
+  </div>
+</section>
+<!-- ============ 11 面试 ============ -->
+<section id="qa">
+  <div class="sec-h"><span class="num">11</span><h2>面试专题 12 问<small>每题：30 秒答法 + 追问预案 + 对应代码</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">默认收起。<b>先自己说一遍再点开</b>——FPGA 岗的面试官特别爱在你答完后改一个条件追问，所以"追问预案"比"答法"更重要。</p>
+
+    <div class="cards">
+
+      <div class="card">
+        <button><span class="ix">Q01</span><span>信号（signal）和变量（variable）的区别？这个项目里分别用在哪？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd><b>signal 进程结束时才更新，variable 赋值立即生效</b>。tracking_logic 里速度计算全用 variable：查表得 track_speed → 乘 follow_ratio → 被强制左转覆盖 → 写给输出 signal，<b>四步在同一拍内流水完成</b>。如果全用 signal，每步等一拍，要么拆成状态机要么拆成多进程。状态量（state_lap、cooldown_timer）用 signal——它们本来就要跨拍保持。</dd>
+          <dt>追问预案</dt><dd>①variable 综合后不占寄存器（除非被跨拍读）——它就是组合逻辑的中间节点；②滥用 variable 做跨拍状态是新手大坑：进程一结束值就没了；③"variable 是软件思维？"——不是，它是<b>组合逻辑的显式命名</b>，比嵌套表达式可读。</dd>
+          <dt>对应代码</dt><dd class="mono">tracking_logic.vhd 61–66、134–235</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q02</span><span>为什么异步信号进时钟域要打两拍？不打会怎样？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>异步信号（echo、ir_rx）与 50 MHz 时钟无相位关系，采样时可能踩进建立/保持窗口，触发器输出<b>亚稳态</b>——一个既非 0 非 1 的电平往下游传染。两级同步器：第一拍允许亚稳，第二拍给足一整个周期让它稳定。<b>这个项目里 echo 做了（echo_sync），红外接收却声明了 rx_sync 没用上</b>——我能指出这个不一致，也知道修法就是三行代码。</dd>
+          <dt>追问预案</dt><dd>①两级不能根绝，亚稳态概率随级数指数下降，MTBF 从年降到宇宙年龄量级；②多比特数据不能简单打两拍（各比特亚稳独立，可能撕裂）——要用握手或异步 FIFO；③本项目所有"多比特"（距离、灰度帧）其实都是同步产生的内部信号，真正异步的只有三根单 bit 线。</dd>
+          <dt>对应代码</dt><dd class="mono">hc_sr04.vhd 47–49；ir_sync.vhd 41–43（未用）、123</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q03</span><span>圈数计数的三个条件分别防什么？去掉哪个会炸？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd><b>15 ms 持续确认</b>防传感器毛刺；<b>1 s 冷却</b>防车头车尾分两次压同一条线；<b>圈内锁存</b>防冷却刚结束、车尾还在线上的边界情况。三种误判来自三种物理来源（噪声、车长、时序边界），所以要三个条件——不是层层加码，是各管一件事。</dd>
+          <dt>追问预案</dt><dd>①15 ms 怎么定：跨线时间下限 ≈ 线宽 ÷ 车速 ≈ 6 ms，取 2.5 倍余量；1 s 是一圈最短重复间隔的 1/20；②更优雅的方案：边沿检测 + 迟滞比较器，但开关量没有"值"，确认窗已经是开关量的"迟滞"等价物。</dd>
+          <dt>对应代码</dt><dd class="mono">tracking_logic.vhd 139–161</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q04</span><span>全白丢线为什么"按记忆方向继续转"而不是停车？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>全白大概率是<b>动态丢线</b>——车冲过线了。按 last_act 继续差速，车头画弧扫回线上；停车就永远停在那。真正的代价：如果车被挪走（静态脱轨），它会原地画圈——没有倒车和找回闭环，这是已声明的系统局限。</dd>
+          <dt>追问预案</dt><dd>①怎么区分动态/静态丢线？加计时：全白超过 N 秒判定真脱轨，停车报警；②last_act 用 signal 存，跳变时自动带一拍延迟——对 50 MHz 无感；③注意丢线时慢侧给 ZERO 而不是 TURN_LO，紧急状态动作要更狠。</dd>
+          <dt>对应代码</dt><dd class="mono">tracking_logic.vhd 185–192</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q05</span><span>跟随为什么分四档，不做连续 PID？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>输入配不上：HC-SR04 每 20 ms 一个读数、厘米级抖动，连续 PID 会<b>追着噪声跑</b>。四档 + 档间死区（100–200 mm 常态带）对噪声免疫——读数在档边界抖，输出只在两档间切换，宏观行为不变。<b>采样慢噪声大的传感器 + 低分辨率执行器，离散分档是最稳的工程解</b>。</dd>
+          <dt>追问预案</dt><dd>①想要平滑？先滤波（滑动平均 4–8 点）再 PID，把 20 ms 延迟算进控制周期；②档位边界怎么定：60/100/200/400 分别对应停车余量、减速带、常态带、量程可信边界；③换激光雷达或编码器测距，这套逻辑就该重写成连续控制。</dd>
+          <dt>对应代码</dt><dd class="mono">tracking_logic.vhd 197–208</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q06</span><span>单时钟域是什么意思？代价是什么？什么时候必须跨？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>全系统只有 50 MHz 一个时钟，所有进程同一个节拍——<b>不需要任何跨域同步</b>，静态时序分析（STA）也只需按一个时钟约束检查。代价：最慢的那条组合路径决定上限频率。必须跨域的时机：接入不同时钟的外设（如 100 MHz ADC、异步 UART）或做多时钟功耗优化时。</dd>
+          <dt>追问预案</dt><dd>①本项目时序最紧的路径（推断）：hc_sr04 里的 echo_cnt ÷ 294 单拍除法器；②STA 报 slack 为负怎么办：流水线切逻辑、改乘法+移位、或降频；③两个同步器（echo）严格说是"异步输入同步进单域"，不是跨时钟域传输。</dd>
+          <dt>对应代码</dt><dd class="mono">hc_sr04.vhd 58</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q07</span><span>为什么顶层例化五个模块，而不是写在一个文件里？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>三个理由按分量排：①<b>单独仿真</b>——每个模块独立 testbench，不依赖整车；②<b>改动隔离</b>——改循迹只重综合 tracking_logic，别的模块时序不受牵连；③<b>端口即接口文档</b>——五个 port map 就是团队分工合同。顶层 256 行里 0 行业务逻辑（蜂鸣器除外），这是刻意的。</dd>
+          <dt>追问预案</dt><dd>①缺点：信号要穿层、命名爆炸（w_ 前缀就是对策）；②什么时候该合并：强耦合的小逻辑（比如 Y 锁定和查表其实都在 tracking_logic 里，没拆）；③"你负责定义接口吗"——按实际讲，接口先定是团队协作的自然顺序。</dd>
+          <dt>对应代码</dt><dd class="mono">smart_car.vhd 179–254</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q08</span><span>CLK_PER_MM = 294 怎么来的？现场推一遍。</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>声速 340 m/s，1 mm 的<b>往返</b>飞行时间 = 2×0.001÷340 ≈ 5.88 μs；乘 50 MHz = 294 个时钟周期。反过来 echo 高电平 N 拍，距离就是 N÷294 mm。验算：echo 5880 拍 = 20 mm。</dd>
+          <dt>追问预案</dt><dd>①为什么乘 2：声波走到目标再回来，飞的是双程；②声速受温度影响（0.6 m/s/℃），从 20℃ 到 35℃ 距离读数偏 2.6%——四档跟随对此不敏感；③量程验算：5000000 拍 ÷ 294 ≈ 17 m，远超 HC-SR04 标称 4 m。</dd>
+          <dt>对应代码</dt><dd class="mono">hc_sr04.vhd 20、58</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q09</span><span>38 kHz 载波怎么生成？红外为什么非要载波？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>独立进程做一个自由振荡方波：数 657 拍翻转一次（50 MHz ÷ 38 kHz ÷ 2 ≈ 657），发送状态机在 9 ms 里把这个振荡器"接通"到发射管。要载波是因为环境光里全是红外，直流点亮区分不开；VS1838 接收头内置 38 kHz 带通，<b>用频域换信噪比</b>。</dd>
+          <dt>追问预案</dt><dd>①9 ms + 4.5 ms 借自 NEC 遥控协议的引导码——成熟时序，接收头天生认识；②接收判决只要 2 ms 不等满 9 ms：灵敏度换速度的取舍，注释里写明了"2 ms 足够区别于普通干扰"；③载波发生器永远在跑浪费功耗吗——不浪费，不驱动发射管就不耗电，逻辑翻转本身在 FPGA 里几乎零功耗。</dd>
+          <dt>对应代码</dt><dd class="mono">ir_sync.vhd 49–65（载波）、85–93（门控）</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q10</span><span>Y 字路口锁定那 100 ms 在防什么？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>防"跟车在路口被前车挡住"。路口处前车恰好挡在超声波正前方，distance 骤降，跟车减速甚至停车——<b>车就永远卡在路口</b>。检测到 Y 形特征码后自锁 100 ms，期间强制只用循迹速度、无视跟随，车头越过路口后恢复正常。</dd>
+          <dt>追问预案</dt><dd>①100 ms 是车速 × 车头长度的量级（推断为实测调出）；车速变了要重调——这是已知局限；②更鲁棒的方案：不看固定时间，改看"特征码消失且恢复了直行码"再解锁；③为什么特征码 "00011000" 和直行码重复——同一个形态两种语义，靠上下文（是否在锁定窗口）区分。</dd>
+          <dt>对应代码</dt><dd class="mono">tracking_logic.vhd 163–173、211–214</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q11</span><span>这套系统用单片机也能做，FPGA 方案的本质价值在哪？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>三个硬指标：①<b>并行时间窗</b>——15 ms 确认、1 s 冷却、38 kHz 载波、1 kHz PWM 物理上同时跑，单片机要拿定时器资源硬凑；②<b>确定性</b>——没有中断延迟抖动，圈数计数的 15 ms 窗口误差是纳秒级；③<b>模块物理隔离</b>——改一个模块不碰别人的时序。但决策逻辑本身用单片机更省事——<b>选 FPGA 是课设要求 + 时间窗密集这两个原因</b>。</dd>
+          <dt>追问预案</dt><dd>①反过来问"哪些地方 FPGA 过度设计了"：跟随四档和查表在 100 Hz 单片机上绰绰有余；②真硬实时的是载波生成和 echo 计数（精度取决于时钟）；③混合方案：小 FPGA（或 CPLD）做载波/测距，单片机做决策——很多商用产品就这么分。</dd>
+          <dt>对应代码</dt><dd class="mono">全项目</dd>
+        </dl></div>
+      </div>
+
+      <div class="card">
+        <button><span class="ix">Q12</span><span>这套逻辑怎么验证的？只靠上车跑吗？</span><span class="arw">+</span></button>
+        <div class="body"><dl>
+          <dt>30 秒答法</dt><dd>分层验证（按实际讲，此处为方向）：①<b>模块级 testbench</b>——给 sensor_scanner 喂激励看 8 路帧、给 hc_sr04 造 echo 波形量 distance；②<b>顶层仿真</b>——模拟按键按下、检查 tx 时序和状态迁移；③<b>上板 LED 分段观察</b>——led_lap 显示圈数、led_debug 显示停车，把内部状态引出来看；④最后才是整车。每个模块端口独立才让 ①成为可能——这正是例化的价值。</dd>
+          <dt>追问预案</dt><dd>①testbench 里怎么造 20 ms 的 echo？——用时间控制的信号赋值（after）；②仿真和上板不一致怎么办：先查异步输入（上板才有亚稳态和噪声）、再查约束文件引脚分配；③圈数这种慢过程仿真太慢——把 BLACK_FILTER_TIME 做成 generic（本项目 scanner 已示范），仿真时调小。</dd>
+          <dt>对应代码</dt><dd class="mono">sensor_scanner.vhd 6–8（generic 示范）</dd>
+        </dl></div>
+      </div>
+
+    </div>
+
+    <h3 style="font:600 17px/1.4 var(--sans);margin:26px 0 6px;color:#fff">追问链：FPGA 岗最常挖的三条线</h3>
+
+    <div class="chainq">
+      <h4>链 A：从同步器挖到亚稳态本质</h4>
+      <ol>
+        <li><span class="lvl">L1</span>"你项目里哪里用了同步器？"——echo 两级打拍（顺手指出红外 rx_sync 声明了没用，知道是坑）。</li>
+        <li><span class="lvl">L2</span>"两级就够了吗？失效概率是多少量级？"<b>——不能根绝，指数下降</b>：单级亚稳概率 ~10⁻⁶/拍量级（取决于器件和频率），两级再乘一个衰减因子，MTBF 从"天"拉到"千年"以上。</li>
+        <li><span class="lvl">L3</span>"那多比特数据怎么跨域？两拍不就撕裂了？"<b>——握手或异步 FIFO</b>：发送侧把数据打进双口 RAM/FIFO，用一个经过同步的"写完成"脉冲通知对侧；格雷码指针防读写在同一拍翻转。能主动说到格雷码，这条线就满分。</li>
+      </ol>
+    </div>
+
+    <div class="chainq">
+      <h4>链 B：从除法器挖到时序收敛</h4>
+      <ol>
+        <li><span class="lvl">L1</span>"你代码里有除法，FPGA 里除法怎么实现？"<b>——综合器生成组合除法器</b>（级联的减法-移位结构），面积大、路径长；本项目 ÷294 出现在每拍的 else 分支里。</li>
+        <li><span class="lvl">L2</span>"50 MHz 能收敛吗？怎么确认？"<b>——跑 STA 看这条路径的 slack</b>（推断它是关键路径）。负 slack 的修法：只在 echo 下降沿那一拍算一次（把常驻除法变偶发）、乘倒数（294⁻¹ 定点化）+ 移位、或加一级流水。</li>
+        <li><span class="lvl">L3</span>"为什么流水线能救时序？代价呢？"——切组合逻辑为 N 段，每段一个周期的建立时间预算，<b>代价是延迟 +N 拍和 N 个寄存器</b>。测距路径多 1–2 拍延迟（40 ns）对毫米级精度零影响。</li>
+      </ol>
+    </div>
+
+    <div class="chainq">
+      <h4>链 C：从模块划分挖到团队协作</h4>
+      <ol>
+        <li><span class="lvl">L1</span>"五个人（按实际人数讲）怎么分工的？"<b>——先定五个模块的端口，再分头写</b>；我负责 tracking_logic 和顶层集成，所以接口划分实际上是我牵头定的（按实际调整）。</li>
+        <li><span class="lvl">L2</span>"接口怎么定的？改过吗？"<b>——按数据流方向定</b>：传感器类模块只输出、决策只消费；中途加红外时给 tracking_logic 加了两个端口（代码注释里还能看到【新增】的痕迹）。改接口的成本就是所有 port map 重对一遍，所以第一版宁可多留（也留下了 stop_req 这种没用上的）。</li>
+        <li><span class="lvl">L3</span>"如果模块间时序对不上怎么办？"<b>——加 valid/ready 握手或 FIFO</b>，让消费方明确知道"这帧数据好了没有"。本项目靠"永远有最新帧"的推模型（scanner 持续输出）省掉了握手——因为灰度数据是状态不是事件，旧的也能用。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ 12 易错点 ============ -->
+<section id="pit">
+  <div class="sec-h"><span class="num">12</span><h2>易错点清单<small>12 条，每条一句话，可直接背</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">这些都是<b>真的会让人卡两小时</b>的坑。<span class="hl-r">红色 = 现象明显但难定位</span>，<span class="hl-a">橙色 = 隐蔽的逻辑错误</span>，<span class="hl-t">青色 = 语言/平台特性</span>，<span class="hl-v">紫色 = 语义差</span>。</p>
+
+    <div class="blk io-hide"><h4>12 条</h4><div class="in"><ul class="pit" style="list-style:none;padding-left:0">
+      <li><span class="hl-v">■</span> <b>signal 进程末才更新、variable 立即更新</b>。想在同一拍里"算完就用"必须用 variable——tracking_logic 的速度流水线就靠它。</li>
+      <li><span class="hl-v">■</span> <b>VHDL 比较是 <code>=</code>，赋值是 <code>&lt;=</code></b>。C 写多了满屏 <code>==</code> 是编译错误，还算好抓。</li>
+      <li><span class="hl-r">■</span> <b>when–else 只能写在进程外</b>（并发信号赋值），进程内必须 if–elsif 或 case。hc_sr04 注释里那句"修复：进程内用 if 替换 when"就是踩过这个坑的原话。</li>
+      <li><span class="hl-r">■</span> <b>异步引脚直接进进程 = 亚稳态敞口</b>。本项目红外接收就没打拍——声明了 rx_sync 却没用，修复只要三行。</li>
+      <li><span class="hl-a">■</span> <b>integer range 越界：仿真直接崩</b>，上板则高位截断。range 约束写错（w_speed_r 的 0 to 5000）比不写更危险。</li>
+      <li><span class="hl-a">■</span> <b>计数器不设饱和保护</b>，上限值卡住就溢出。echo_cnt 卡高 100 ms 即越界——场地干净所以没炸。</li>
+      <li><span class="hl-t">■</span> <b>'1' 是 std_logic 字符，"11111111" 是 8 位向量</b>——类型不同不能混比，case 里选错直接编译报错。</li>
+      <li><span class="hl-t">■</span> <b>复位低有效是惯例</b>（rst_n）。开发板按键按下接地，写成正有效会发现"一上电就复位"。</li>
+      <li><span class="hl-a">■</span> <b>端口不接不报错</b>——stop_req 接而未用编译器一声不吭。死线要靠 review 抓。</li>
+      <li><span class="hl-a">■</span> <b>case 没有 when others 兜底 = 锁存器警告</b>。本项目的 others 给了默认直行——8 位输入 256 种组合，没列全的组合都是"保持直行"。</li>
+      <li><span class="hl-t">■</span> <b>除法会综合出真除法器</b>，单拍大位宽除法是时序重负载。常数除法优先转乘倒数+移位。</li>
+      <li><span class="hl-a">■</span> <b>一个编码两种语义是 bug 温床</b>：debug_lap 的 "11" 既表示第 3 圈又表示完成——蜂鸣器因此存在提前触发的路径。</li>
+    </ul></div></div>
+
+    <div class="cal warn io-hide"><span class="t">还有一条经验</span>整个项目大量依赖"计数器代替延时"——<b>每个时间参数都该做成 constant 或 generic</b>（scanner 的 STABLE_TIME 是示范，tracking_logic 里那些 750000、50000000、40000000 是反面教材）。常数集中在头部，调参才不用满文件找。</div>
+
+  </div>
+</section>
+
+<!-- ============ 13 自测 ============ -->
+<section id="test">
+  <div class="sec-h"><span class="num">13</span><h2>自测 8 题<small>三道必须动笔算，一题必须能画图</small></h2><button class="fold" aria-label="折叠">−</button></div>
+  <div class="sec-body">
+
+    <p class="oneline">答案默认折叠。<b>先写下来再展开</b>——第 1、2、3 题在面试里被要求现场推导的概率最高。</p>
+
+    <div class="tests">
+
+      <div class="tt">
+        <p>【算】CLK_PER_MM = 294 现场推一遍，并验算 echo = 117600 拍对应多少毫米。</p>
+        <button>看答案</button>
+        <div class="ans"><div class="calc">声速 340 m/s，1 mm 往返时间 = 2 × 0.001 ÷ 340 = 5.88 μs
+时钟数 = 5.88 μs × 50 拍/μs ≈ <span class="r">294 拍/mm</span>
+117600 ÷ 294 = <span class="r">400 mm</span>（正是跟丢阈值 FOLLOW_TRACK_DIST）</div></div>
+      </div>
+
+      <div class="tt">
+        <p>【算】15 ms 确认、1 s 冷却、100 ms 路口锁定、20 ms 按键防抖，分别对应多少个 50 MHz 时钟周期？</p>
+        <button>看答案</button>
+        <div class="ans"><div class="calc">50 MHz = 每毫秒 50000 拍
+15 ms → <span class="r">750000</span>（BLACK_FILTER_TIME）
+1 s → <span class="r">50000000</span>（COOLDOWN_MAX）
+100 ms → <span class="r">5000000</span>（y_lock_cnt 装载值）
+20 ms → <span class="r">1000000</span>（btn_deb_cnt 上限）</div></div>
+      </div>
+
+      <div class="tt">
+        <p>【算】38 kHz 载波的翻转计数为什么是 657？9 ms 发送窗口里大约包含多少个完整载波周期？</p>
+        <button>看答案</button>
+        <div class="ans"><div class="calc">一个载波周期 = 50 MHz ÷ 38 kHz ≈ 1315.8 拍
+方波每周期翻转 2 次 → 半周期 = 1315.8 ÷ 2 ≈ <span class="r">657 拍</span>（13.1 μs）
+9 ms ÷ 26.3 μs ≈ <span class="r">342 个完整周期</span></div></div>
+      </div>
+
+      <div class="tt">
+        <p>把 tracking_logic 里的五个 variable 全换成 signal，会发生什么？说出至少两个后果。</p>
+        <button>看答案</button>
+        <div class="ans">
+          <p>①"查表 → 乘比例 → 覆盖 → 输出"的流水线每步延后一拍，一次完整决策从 1 拍变 4 拍（80 ns，功能上几乎无感，但……）；②逻辑结构被迫重写：signal 版本里"先算 track 再基于它算 ratio 缩放"读不到当拍值，要么拆成多个并行进程加组合逻辑，要么上状态机分拍执行；③综合后 signal 每个都可能映射成寄存器（variable 只是组合节点），面积反而可能变大。核心考的还是那句话：<b>变量是进程内的草稿纸，信号是进程间的传声筒</b>。</p>
+        </div>
+      </div>
+
+      <div class="tt">
+        <p>state_lap = 3 时，debug_lap 输出什么？蜂鸣器在什么条件下会被误触发？</p>
+        <button>看答案</button>
+        <div class="ans">
+          <p>输出 <code>to_unsigned(3,2) = "11"</code>，与完成态（state_lap=4，else 分支 "11"）编码冲突。蜂鸣器触发条件是 <code>w_lap_info="11" and w_speed_l=0 and buzzer_has_ring='0'</code>——所以<b>第三圈进行中只要被超声逼停（distance &lt; 60 mm 导致速度为 0），蜂鸣器就会提前响</b>；且 buzzer_has_ring 锁定后，真跑完时不再响。修法：加宽 debug_lap 到 3 位，或重新编码让状态 3 不输出全 1。</p>
+        </div>
+      </div>
+
+      <div class="tt">
+        <p>为什么跟车的红外启动通道可以跳过按键防抖？换成"红外也防抖 20 ms"有什么后果？</p>
+        <button>看答案</button>
+        <div class="ans">
+          <p>防抖的本质是<b>时间确认</b>——ir_sync 的接收判决已经要求低电平持续 2 ms 才输出脉冲，等于上游做过一次时间确认，再来一遍是冗余。后果层面：多等 20 ms 起步更晚（本来握手已经花 11 ms），而且防抖逻辑对单拍脉冲无效——rx_detect 只亮一拍，20 ms 计数器根本数不到 1000000 就被清零了，<b>照抄按键防抖反而会让红外启动永远失效</b>。</p>
+        </div>
+      </div>
+
+      <div class="tt">
+        <p>echo 引脚被干扰卡在高电平 150 ms，hc_sr04 里会发生什么？正确写法是什么？</p>
+        <button>看答案</button>
+        <div class="ans">
+          <p>echo_cnt 数到 range 上限 5000000 后再 +1 就是<b>整数越界</b>：仿真器报错停机，上板行为未定义（综合实现通常截断或回绕，距离读数跳变）。正确写法：加饱和保护（数到上限就停）并把"数满"解释为无效测量——输出一个超时标志或强制 distance 为 0，让决策端落进"跟丢"分支。顺手一提：echo 丢失（一直低）时 distance 冻结在旧值，同样需要超时兜底。</p>
+        </div>
+      </div>
+
+      <div class="tt">
+        <p>【画】不看第 07 节的图，手画决策模块的优先级合成数据流：三路输入、一个 variable 流水线、两路输出，标出谁覆盖谁。</p>
+        <button>看答案</button>
+        <div class="ans">
+          <p>三路输入：<b>eff_sensor</b>（查表 → track_speed_l/r）、<b>distance_mm</b>（四档 → follow_ratio）、<b>Y_JUNC_TRIG 命中</b>（100 ms 自锁 y_junction_lock）。合成优先级：<b>y_junction_lock &gt; 停车（ratio=0）&gt; 比例缩放</b>；最后还有"第二圈强制左转"补丁可以在特定传感器码下覆盖一切输出到 80/10。输出 speed_l / speed_r 是 signal，进程结束才对外可见。对照第 07 节的图检查箭头方向和覆盖关系。</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cal warn io-hide"><span class="t">八题全对就可以开讲了</span>卡在第 1–3 题 → 回第 04、05、08 节的推导；卡在第 4 题 → 第 07 节开头那个紫色框；卡在第 5 题 → 第 10 节 bug #1。</div>
+
+  </div>
+</section>
+
+<div class="growth">
+  <a href="04-gas-sampling.html"><span class="dir">← 成长线上一篇（2025.10）</span><b>气体检测采样单元 · 健壮性与协作</b></a>
+  <a href="02-esp32-speaker.html"><span class="dir">成长线下一篇（2026.03）→</span><b>磁流体蓝牙音响 · 双核与内存取舍</b></a>
+</div>
+
+<footer>
+  <p>事实来源：六个 VHDL 源文件（smart_car.vhd 256 行、tracking_logic.vhd 241 行、ir_sync.vhd 148 行、hc_sr04.vhd 69 行、sensor_scanner.vhd 50 行、motor_pwm.vhd 36 行，行号逐行核对）、项目描述文档，以及我对代码的阅读。</p>
+  <p>第 10 节的五个问题、各处标"推断"的结论是代码阅读的结果，不是报告原文；其余数字都能在源码里找到出处。模块作者归属、testbench 细节请按实际情况修正后再用。</p>
+  <p>没解决的部分照实写：路口锁定时间固定、循迹无连续控制、无丢线找回（不能倒车）、红外握手无确认无重发。</p>
+</footer>
+
+</div>
+</main>
+<script>
+(function(){
+  "use strict";
+
+  var KW = {};
+  ("entity architecture port generic map process signal variable constant begin end "
+   +"if then else elsif case when others with select component library use is are of type "
+   +"subtype to downto in out inout buffer true false rising_edge falling_edge and or not "
+   +"xor nand nor mod rem abs return loop while for wait after until report assert").split(" ").forEach(function(w){ KW[w]=1; });
+  var TY = {};
+  ("std_logic std_logic_vector integer natural positive boolean bit bit_vector unsigned signed real time").split(" ").forEach(function(w){ TY[w]=1; });
+
+  function escChar(ch){ return ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : ch === "&" ? "&amp;" : ch; }
+  function escAll(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function tag(cls, s){ return '<span class="'+cls+'">'+s+'</span>'; }
+  function markC(s){ return s.replace(/[\u2460-\u2473]/g, function(m){ return '<span class="mk">'+m+'</span>'; }); }
+
+  function hlLine(line, st){
+    var out = "", i = 0, n = line.length;
+    while (i < n) {
+      if (st.inC) { out += line[i]; i++; continue; }
+      var ch = line[i];
+      if (ch === "-" && line[i+1] === "-") { out += tag("c", markC(escAll(line.slice(i)))); i = n; continue; }
+      if (ch === '"') {
+        var j = i + 1;
+        while (j < n && line[j] !== '"') { j++; }
+        j = Math.min(j + 1, n);
+        out += tag("s", escAll(line.slice(i, j))); i = j; continue;
+      }
+      if (ch === "'") {
+        var k = i + 1;
+        if (line[k] && line[k+1] === "'") { out += tag("s", escAll(line.slice(i, k+2))); i = k + 2; continue; }
+        out += escChar(ch); i++; continue;
+      }
+      if (/[A-Za-z_]/.test(ch)) {
+        var w = i; while (w < n && /[A-Za-z0-9_]/.test(line[w])) w++;
+        var word = line.slice(i, w), lw = word.toLowerCase();
+        if (KW[lw]) out += tag("k", word);
+        else if (TY[lw]) out += tag("t", word);
+        else out += word;
+        i = w; continue;
+      }
+      if (/[0-9]/.test(ch)) {
+        var m = i; while (m < n && /[0-9]/.test(line[m])) m++;
+        out += tag("n2", line.slice(i, m)); i = m; continue;
+      }
+      out += escChar(ch); i++;
+    }
+    return out;
+  }
+
+  document.querySelectorAll(".code code").forEach(function(code){
+    var raw = code.textContent.replace(/\s+$/, "");
+    var start = parseInt(code.getAttribute("data-start") || "1", 10);
+    code.dataset.raw = raw;
+    var lines = raw.split("\n");
+    var html = "";
+    for (var i = 0; i < lines.length; i++) {
+      var l = hlLine(lines[i], {});
+      if (l === "") l = " ";
+      html += '<span class="l"><span class="n">' + (start + i) + "</span>" + l + "</span>";
+    }
+    code.innerHTML = html;
+  });
+
+  document.addEventListener("click", function(ev){
+    var btn = ev.target.closest(".copy");
+    if (!btn) return;
+    var box = btn.closest(".code");
+    var code = box && box.querySelector("code");
+    if (!code) return;
+    var txt = code.dataset.raw || code.textContent;
+    var done = function(){
+      btn.textContent = "已复制";
+      btn.classList.add("ok");
+      setTimeout(function(){ btn.textContent = "复制"; btn.classList.remove("ok"); }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done, function(){ fallback(txt, done); });
+    } else { fallback(txt, done); }
+  });
+  function fallback(txt, cb){
+    var ta = document.createElement("textarea");
+    ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); cb(); } catch(e){}
+    document.body.removeChild(ta);
+  }
+
+  var pg = document.getElementById("pg");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#side a"));
+  var secs = links.map(function(a){ return document.getElementById(a.getAttribute("href").slice(1)); });
+
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    pg.style.width = (max > 0 ? (h.scrollTop / max * 100) : 0) + "%";
+    var cur = 0;
+    for (var i = 0; i < secs.length; i++) {
+      if (secs[i] && secs[i].getBoundingClientRect().top <= 96) cur = i;
+    }
+    for (var j = 0; j < links.length; j++) links[j].classList.toggle("on", j === cur);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+
+  document.querySelectorAll(".sec-h").forEach(function(h){
+    h.addEventListener("click", function(){
+      var s = h.parentNode;
+      s.classList.toggle("collapsed");
+      var b = h.querySelector(".fold");
+      if (b) b.textContent = s.classList.contains("collapsed") ? "+" : "−";
+    });
+  });
+
+  document.querySelectorAll(".card > button").forEach(function(b){
+    b.addEventListener("click", function(){
+      var c = b.parentNode;
+      c.classList.toggle("open");
+      b.querySelector(".arw").textContent = c.classList.contains("open") ? "−" : "+";
+    });
+  });
+  document.querySelectorAll(".tt > button").forEach(function(b){
+    b.addEventListener("click", function(){
+      var t = b.parentNode;
+      t.classList.toggle("open");
+      b.textContent = t.classList.contains("open") ? "收起答案" : "看答案";
+    });
+  });
+
+  var io = document.getElementById("io");
+  io.addEventListener("click", function(){
+    document.body.classList.toggle("io");
+    var on = document.body.classList.contains("io");
+    io.classList.toggle("on", on);
+    io.textContent = on ? "退出速览" : "只看面试题";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  var SECNAME = {};
+  links.forEach(function(a){
+    SECNAME[a.getAttribute("href").slice(1)] = a.textContent.replace(/^\s*\d+\s*/, "").trim();
+  });
+
+  var IDX = [
+    { s:"pitch",    t:"开场：30 秒电梯版与 2 分钟 STAR 脚本", k:"开场 面试 讲项目 电梯 star 30秒 2分钟 角色边界" },
+    { s:"overview", t:"全局：双车协同框图与软硬思维对比", k:"全局 框图 领车 跟车 协同 同时存在 单时钟域 并行 对比 单片机" },
+    { s:"top",      t:"顶层：例化即集成、蜂鸣器两进程", k:"顶层 smart_car 例化 port map component 连线 蜂鸣器 1khz 方波 debug_lap 圈数指示" },
+    { s:"scan",     t:"扫描：8 路选通、100μs 稳定期、一帧 800μs", k:"sensor_scanner 灰度 扫描 选通 地址 stable_time 5000 100us 帧 三选二 data_ready 极性 1黑" },
+    { s:"sonic",    t:"超声：20ms 周期、echo 两级打拍、294 换算", k:"hc_sr04 超声 trig echo 294 距离 毫米 亚稳态 同步器 echo_sync stop_flag 除法" },
+    { s:"ir",       t:"红外：38kHz 载波、9ms 引导码、2ms 判决", k:"ir_sync 红外 载波 38khz 657 nec 引导码 9ms 4.5ms vs1838 rx_detect 脉冲 握手" },
+    { s:"logic",    t:"决策上：状态机、两套启动、圈数三重条件", k:"tracking_logic state_lap 状态机 启动 防抖 冷却 750000 15ms 50000000 圈数 锁存 全黑" },
+    { s:"logicb",   t:"决策下：查表、全白记忆、四档跟随、优先级", k:"查表 case 全白 last_act 丢线 记忆 跟随 四档 follow_ratio 130% y字路口 锁定 variable 信号" },
+    { s:"pwm",      t:"PWM：1kHz、duty×500；蜂鸣器翻转计数", k:"motor_pwm pwm 50000 1khz 占空比 duty 500 方波 25000 翻转" },
+    { s:"walk",     t:"推演：双车从发车到收车的完整时间线", k:"推演 时间线 发车 起步 停车 蜂鸣 收车 全程 11ms" },
+    { s:"bugs",     t:"真问题：五个代码问题的推演与修法", k:"bug 问题 debug_lap 歧义 stop_req 未用 rx_sync 亚稳态 range 5000 echo 溢出 冻结 改进" },
+    { s:"qa",       t:"面试 12 问 + 三条追问链", k:"面试 问答 信号 变量 打拍 亚稳态 圈数 pid 单时钟域 例化 294 载波 路口 仿真 testbench 追问链" },
+    { s:"pit",      t:"易错点 12 条", k:"易错 坑 清单 when else 进程 range others 锁存器 常数 generic" },
+    { s:"test",     t:"自测 8 题（含三道计算）", k:"自测 计算 294 750000 657 50000 variable debug_lap 超时 画图" },
+    { s:"logicb",   t:"信号 vs 变量：本项目的最实在用法", k:"signal variable 区别 立即 进程末 流水线 草稿纸" },
+    { s:"overview", t:"为什么四档不用连续 PID", k:"pid 噪声 抖动 死区 分档 离散" }
+  ];
+
+  var q = document.getElementById("q");
+  var res = document.getElementById("res");
+  var picked = -1, shown = [];
+
+  function render(qs){
+    shown = [];
+    if (!qs) { res.style.display = "none"; res.innerHTML = ""; return; }
+    var ql = qs.toLowerCase();
+    shown = IDX.filter(function(it){
+      return (it.t + " " + it.k).toLowerCase().indexOf(ql) >= 0;
+    }).slice(0, 10);
+    if (!shown.length) { res.innerHTML = '<div style="color:#697585">没找到，换个词试试（模块名 / 信号名 / 现象）</div>'; res.style.display = "block"; return; }
+    res.innerHTML = shown.map(function(it, i){
+      var nm = SECNAME[it.s] || it.s;
+      var tip = it.t.indexOf(nm) < 0 ? nm : "";
+      return '<div data-i="'+i+'"><em>'+tip+'</em>'+it.t+"</div>";
+    }).join("");
+    res.style.display = "block";
+    picked = -1;
+  }
+  function go(it){
+    var el = document.getElementById(it.s);
+    if (!el) return;
+    el.classList.remove("collapsed");
+    var f = el.querySelector(".fold"); if (f) f.textContent = "−";
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.animate([{ background:"rgba(106,169,255,.10)" }, { background:"transparent" }], { duration: 1300 });
+    res.style.display = "none";
+    q.blur();
+  }
+  q.addEventListener("input", function(){ render(q.value.trim()); });
+  q.addEventListener("focus", function(){ if (q.value.trim()) render(q.value.trim()); });
+  q.addEventListener("keydown", function(e){
+    if (e.key === "Escape") { res.style.display = "none"; q.blur(); }
+    if (e.key === "Enter") { if (picked >= 0 && shown[picked]) go(shown[picked]); else if (shown[0]) go(shown[0]); }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      var items = res.querySelectorAll("div[data-i]");
+      if (!items.length) return;
+      picked = e.key === "ArrowDown" ? Math.min(picked + 1, items.length - 1) : Math.max(picked - 1, 0);
+      items.forEach(function(d, i){ d.classList.toggle("sel", i === picked); });
+    }
+  });
+  res.addEventListener("click", function(e){
+    var d = e.target.closest("div[data-i]");
+    if (d) go(shown[+d.dataset.i]);
+  });
+  document.addEventListener("click", function(e){
+    if (!e.target.closest(".search")) res.style.display = "none";
+  });
+
+  var side = document.getElementById("side");
+  var mask = document.getElementById("mask");
+  var burger = document.getElementById("burger");
+  function closeDrawer(){ side.classList.remove("open"); mask.classList.remove("show"); }
+  burger.addEventListener("click", function(){
+    side.classList.toggle("open");
+    mask.classList.toggle("show", side.classList.contains("open"));
+  });
+  mask.addEventListener("click", closeDrawer);
+  side.addEventListener("click", function(e){ if (e.target.closest("a")) closeDrawer(); });
+
+  document.addEventListener("keydown", function(e){
+    if (e.key === "/" && document.activeElement !== q) { e.preventDefault(); q.focus(); }
+  });
+})();
+</script>
+</body>
+</html>

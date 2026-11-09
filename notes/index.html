@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>面试备战总览 · 五个项目一条线</title>
+<style>
+:root{
+  --bg:#0f1319; --panel:#161c24; --panel2:#1b222c; --panel3:#202934;
+  --line:#28313d; --line2:#3a4553;
+  --ink:#dde4ed; --ink2:#9ba8b7; --ink3:#697585;
+  --blue:#6aa9ff; --teal:#35d0ba; --violet:#c08cf5; --amber:#f2b25c;
+  --green:#9ad86a; --red:#ff7d7d;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,Menlo,"Courier New",monospace;
+  --sans:"Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+b,strong{color:#fff;font-weight:600}
+code{font:12.7px var(--mono);background:#1b222c;border:1px solid #2a3541;border-radius:4px;
+     padding:1px 5px;color:#a9e7da;white-space:nowrap}
+
+#pg{position:fixed;top:0;left:0;height:2px;width:0;background:linear-gradient(90deg,var(--teal),var(--blue),var(--violet));z-index:120}
+#top{position:fixed;top:0;left:0;right:0;height:54px;z-index:110;display:flex;align-items:center;gap:12px;
+     padding:0 20px;background:rgba(15,19,25,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{font:600 14px/1 var(--sans);letter-spacing:.04em;color:var(--ink2)}
+.brand em{color:var(--teal);font-style:normal}
+#top .sp{flex:1}
+#top .who{font-size:12.5px;color:var(--ink3)}
+
+.wrap{max-width:960px;margin:0 auto;padding:86px 30px 120px}
+h1{font:600 34px/1.25 var(--sans);letter-spacing:-.015em;margin:10px 0 12px}
+.sub{color:var(--ink2);font-size:15px;margin:0 0 6px;max-width:74ch}
+.hero{border-bottom:1px solid var(--line);padding-bottom:26px}
+
+h2{font:600 22px/1.35 var(--sans);margin:44px 0 6px;color:#fff}
+h2 small{display:block;font:400 13px/1.5 var(--sans);color:var(--ink3);margin-top:3px}
+p{margin:11px 0;max-width:78ch}
+p,li{max-width:78ch}
+
+/* 成长线 */
+.tl{position:relative;margin:26px 0 10px;padding-left:34px}
+.tl::before{content:"";position:absolute;left:9px;top:10px;bottom:10px;width:2px;
+            background:linear-gradient(180deg,var(--teal),var(--blue),var(--violet),var(--amber),var(--red))}
+.stop{position:relative;margin:0 0 22px}
+.stop::before{content:"";position:absolute;left:-31px;top:22px;width:11px;height:11px;border-radius:50%;
+              background:var(--bg);border:2px solid var(--teal)}
+.stop:nth-child(2)::before{border-color:var(--green)}
+.stop:nth-child(3)::before{border-color:var(--blue)}
+.stop:nth-child(4)::before{border-color:var(--violet)}
+.stop:nth-child(5)::before{border-color:var(--amber)}
+.stop:nth-child(6)::before{border-color:var(--red)}
+.pj{display:block;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+    padding:16px 20px;color:var(--ink);text-decoration:none;transition:border-color .15s}
+.pj:hover{border-color:var(--blue);text-decoration:none}
+.pj .when{font:700 10.5px var(--mono);letter-spacing:.14em;color:var(--ink3)}
+.pj h3{margin:4px 0 2px;font:600 17.5px/1.4 var(--sans);color:#fff}
+.pj:hover h3{color:var(--blue)}
+.pj .what{margin:0 0 8px;font-size:13.8px;color:var(--ink2)}
+.pj .kws{display:flex;flex-wrap:wrap;gap:6px}
+.pj .kws span{font:11.5px var(--mono);background:#141a22;border:1px solid #26303c;border-radius:5px;
+              padding:2px 8px;color:var(--ink2)}
+.pj .lesson{margin:9px 0 0;font-size:13.6px;color:#bfe4d4;border-top:1px dashed #26303c;padding-top:8px}
+.pj .lesson b{color:var(--green)}
+
+/* 表格 */
+.tblwrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:13.2px;min-width:640px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #1e252e;vertical-align:top;line-height:1.6}
+th{background:#141a22;color:var(--ink2);font:600 11.5px/1.35 var(--sans);letter-spacing:.04em;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.mono{font:12px var(--mono);color:#a9e7da;white-space:nowrap}
+td.blue{color:#9dc7ff} td.amber{color:#f7c98a} td.violet{color:#d7b6ff} td.red{color:#ffb3b3} td.green{color:#bfe49a} td.teal{color:#7fe3d1}
+tbody tr:hover{background:#151b23}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2c3947;margin-right:2px}
+.dot.on{background:var(--teal)} .dot.hl{background:var(--amber);box-shadow:0 0 6px #f2b25c66}
+
+/* 卡片 */
+.grid{display:grid;gap:12px;margin:16px 0}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.cd{padding:14px 16px;border-radius:10px;background:#141a22;border:1px solid #232c37;border-top:2px solid var(--blue)}
+.cd.c1{border-top-color:var(--teal)} .cd.c2{border-top-color:var(--blue)}
+.cd.c3{border-top-color:var(--amber)} .cd.c4{border-top-color:var(--violet)}
+.cd.c5{border-top-color:var(--green)} .cd.c6{border-top-color:var(--red)}
+.cd h4{margin:0 0 6px;font:600 15px/1.4 var(--sans);color:#fff}
+.cd p{margin:0;font-size:13.8px;color:#bcc7d4;line-height:1.75;max-width:none}
+
+.cal{margin:16px 0;padding:13px 16px;border-radius:9px;font-size:14.4px;line-height:1.8;
+     background:#141a22;border:1px solid #232c37;border-left:3px solid var(--ink3);color:#c6d0dc}
+.cal b{color:#fff}
+.cal .t{display:inline-block;font:700 10.5px/1 var(--sans);letter-spacing:.08em;margin-right:8px;
+        padding:3px 7px;border-radius:4px;vertical-align:1px;color:#0f1319}
+.cal.def{border-left-color:var(--blue)} .cal.def .t{background:var(--blue)}
+.cal.warn{border-left-color:var(--red);background:#1d1517} .cal.warn .t{background:var(--red)}
+.cal.good{border-left-color:var(--green);background:#16211a} .cal.good .t{background:var(--green)}
+.cal.tip{border-left-color:var(--amber);background:#221d14} .cal.tip .t{background:var(--amber)}
+
+.howto{counter-reset:h;list-style:none;padding:0;margin:14px 0}
+.howto li{position:relative;padding:7px 0 7px 40px;margin:0;font-size:14.4px;line-height:1.75;color:#c6d0dc;max-width:78ch}
+.howto li::before{counter-increment:h;content:counter(h);position:absolute;left:0;top:9px;width:24px;height:24px;
+                  border-radius:50%;background:#1c1a26;border:1px solid #3b2f50;color:var(--violet);
+                  font:700 12px/23px var(--mono);text-align:center}
+.howto li b{color:#fff}
+
+footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.6px;line-height:1.9}
+footer p{max-width:78ch}
+
+@media (max-width:800px){
+  .wrap{padding:80px 17px 100px}
+  h1{font-size:25px}
+  .g2,.g3{grid-template-columns:1fr}
+  #top .who{display:none}
+}
+</style>
+</head>
+<body>
+<div id="pg"></div>
+<div id="top">
+  <div class="brand">面试学习网页 · <em>五个项目一条线</em></div>
+  <div class="sp"></div>
+  <div class="who">通信工程 · 求职意向：嵌入式软件 / 硬件开发实习</div>
+</div>
+
+<div class="wrap">
+
+<div class="hero">
+  <div style="font:700 11px var(--mono);color:var(--teal);letter-spacing:.14em">INTERVIEW PREP HUB · 5 PROJECTS · 1 LINE</div>
+  <h1>五个项目，一条成长线</h1>
+  <p class="sub">从大一在 2 KB 内存里挣扎，到大三在双核上做取舍——这五个项目不是五个孤岛，是同一个人能力长出来的五个年轮。面试官看简历是横着看的：他想知道的不是"你做过什么"，而是<b>这些事在你身上留下了什么</b>。</p>
+  <p class="sub">每一页的打开方式都一样：<b>先看 00 节把项目讲出去 → 再进代码精读把它讲透 → 最后用追问链和自测检验</b>。</p>
+</div>
+
+<h2>成长线<small>按时间排序——每一站解决上一站没见过的问题</small></h2>
+
+<div class="tl">
+
+  <div class="stop">
+    <a class="pj" href="05-oled-buzzer.html">
+      <div class="when">2024.11 – 2025.05 · 大一</div>
+      <h3>① OLED 显示与蜂鸣器装置</h3>
+      <p class="what">Arduino UNO（2 KB SRAM）· 四按键优先级 · 程序化动画 · 非阻塞音乐播放 · 双 18650 供电</p>
+      <div class="kws"><span>PROGMEM</span><span>双地址空间</span><span>tone()</span><span>消抖</span><span>内存布局</span></div>
+      <p class="lesson"><b>它教会你的：</b>"代码写对了但数据没地方住，程序照样不工作"——第一次真正的内存事故（花屏 + 随机复位），和第一次把等待摊薄成检查。</p>
+    </a>
+  </div>
+
+  <div class="stop">
+    <a class="pj" href="04-gas-sampling.html">
+      <div class="when">2025.10 · 大二</div>
+      <h3>② 气体检测采样控制单元</h3>
+      <p class="what">团队项目 · Arduino Nano · I2C 数字流量计 + CRC8 + 两点标定 · 蓝牙远程控制 · 165 行</p>
+      <div class="kws"><span>CRC8</span><span>I2C</span><span>异常降级</span><span>ASCII 协议</span><span>闭环确认</span></div>
+      <p class="lesson"><b>它教会你的：</b>第一次写"要交给别人用"的代码——<b>比功能更早想到异常分支</b>。三个传感器故障各走各的降级路径，谁也不能停掉采样循环。</p>
+    </a>
+  </div>
+
+  <div class="stop">
+    <a class="pj" href="03-fpga-dual-car.html">
+      <div class="when">2026.01 · 大三上</div>
+      <h3>③ FPGA 双车循迹与跟随</h3>
+      <p class="what">数电课设 · 五个 VHDL 模块 · 红外握手同步启动 · 超声四档跟随 · 圈数三重条件 · 50 MHz 单时钟域</p>
+      <div class="kws"><span>信号 vs 变量</span><span>两级打拍</span><span>状态机</span><span>计数代延时</span><span>顶层例化</span></div>
+      <p class="lesson"><b>它教会你的：</b>单片机是"做一件事的 CPU"，FPGA 是"同时做所有事的电路"——所有"等一会儿"都是计数器，所有模块物理上并行存在。</p>
+    </a>
+  </div>
+
+  <div class="stop">
+    <a class="pj" href="02-esp32-speaker.html">
+      <div class="when">2026.03 · 大三下</div>
+      <h3>④ 磁流体视觉蓝牙音响</h3>
+      <p class="what">个人全栈项目 · 原理图 / 双层 PCB / 焊接 / 固件全自制 · ESP32 双核 · A2DP 音频驱动视觉 · 约 20 FPS</p>
+      <div class="kws"><span>双核分工</span><span>8bit 取舍</span><span>XSMT 静音</span><span>初始化顺序</span><span>底噪排查</span></div>
+      <p class="lesson"><b>它教会你的：</b>资源意识和并发边界感——大块内存要趁早分配；无锁三条件（单写/单读/可丢弃）；还有"代码写对"和"东西能用"之间隔着模拟那一层。</p>
+    </a>
+  </div>
+
+  <div class="stop">
+    <a class="pj" href="01-pic-auto-car.html">
+      <div class="when">2026.06 · 大三下</div>
+      <h3>⑤ 自动行驶小车（最新一站）</h3>
+      <p class="what">微机课设 4 人小组 · PIC16F877A @ 4 MHz 裸机 · 陀螺仪航向闭环 + 8 路灰度 · 四档任务实测 3/12/13/56 s</p>
+      <div class="kws"><span>寄存器级</span><span>中断分层</span><span>P 控制</span><span>路线表+状态机</span><span>临界区</span></div>
+      <p class="lesson"><b>它教会你的：</b>没有线的时候，所有"到了没"都要自己设计排他条件——每一条判定后面跟着一个"排除另一种可能"的条件，这才是实时系统的真正工作量。</p>
+    </a>
+  </div>
+
+</div>
+
+<h2>技术栈覆盖表<small>面试官横着看：每个技术点在哪些项目里出现过——被问到任何一格，都往 ● 最多的那页跳</small></h2>
+
+<div class="tblwrap">
+<table>
+  <thead><tr>
+    <th>技术点</th><th>①OLED</th><th>②气体</th><th>③FPGA</th><th>④音箱</th><th>⑤PIC</th><th>主答页</th>
+  </tr></thead>
+  <tbody>
+    <tr><td class="mono">裸机 / 寄存器级</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot on"></span></td><td class="amber">⑤ PIC</td></tr>
+    <tr><td class="mono">中断系统 / 临界区</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot on"></span></td><td class="amber">⑤ PIC</td></tr>
+    <tr><td class="mono">状态机设计</td><td><span class="dot on"></span></td><td><span class="dot"></span></td><td><span class="dot on"></span></td><td><span class="dot"></span></td><td><span class="dot on"></span></td><td class="amber">⑤ 或 ③</td></tr>
+    <tr><td class="mono">I2C 驱动 / 校验</td><td><span class="dot on"></span></td><td><span class="dot hl"></span></td><td><span class="dot"></span></td><td><span class="dot on"></span></td><td><span class="dot"></span></td><td class="amber">② 气体</td></tr>
+    <tr><td class="mono">串口 / 协议设计</td><td><span class="dot"></span></td><td><span class="dot on"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot hl"></span></td><td class="amber">⑤ 拼 11 字节帧</td></tr>
+    <tr><td class="mono">PWM / 电机</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot on"></span></td><td><span class="dot"></span></td><td><span class="dot hl"></span></td><td class="amber">⑤ 10 位拆分</td></tr>
+    <tr><td class="mono">传感器融合 / 控制</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot on"></span></td><td><span class="dot"></span></td><td><span class="dot hl"></span></td><td class="amber">⑤ 双传感器</td></tr>
+    <tr><td class="mono">内存管理 / 取舍</td><td><span class="dot hl"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot hl"></span></td><td><span class="dot"></span></td><td class="amber">① 和 ④ 各一课</td></tr>
+    <tr><td class="mono">双核 / RTOS / 并发</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot hl"></span></td><td><span class="dot on"></span></td><td class="amber">④ 音箱</td></tr>
+    <tr><td class="mono">FPGA / HDL</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot hl"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td class="amber">③ FPGA</td></tr>
+    <tr><td class="mono">PCB / 硬件全栈</td><td><span class="dot on"></span></td><td><span class="dot on"></span></td><td><span class="dot"></span></td><td><span class="dot hl"></span></td><td><span class="dot"></span></td><td class="amber">④ 音箱</td></tr>
+    <tr><td class="mono">团队协作 / 接口</td><td><span class="dot"></span></td><td><span class="dot hl"></span></td><td><span class="dot on"></span></td><td><span class="dot"></span></td><td><span class="dot on"></span></td><td class="amber">② 气体</td></tr>
+  </tbody>
+</table>
+</div>
+<p style="font-size:13px;color:var(--ink3)"><span class="dot on"></span> 深度实践　<span class="dot hl"></span> 项目主考点　<span class="dot"></span> 未涉及</p>
+
+<h2>面试方法论<small>这些页怎么用——以及面试当天怎么打</small></h2>
+
+<div class="grid g3">
+  <div class="cd c2"><h4>岗位怎么选主讲的项目</h4><p><b>嵌入式软件</b>：⑤ PIC（实时性）+ ④ 音箱（资源与并发）双主角。<b>硬件 / 数字</b>：③ FPGA 主角 + ④ 的 PCB 故事。<b>测开 / 泛软</b>：② 气体（分层与容错）+ ⑤ 的状态机。其余项目各留 30 秒带过——<b>深讲一个，串讲全部</b>。</p></div>
+  <div class="cd c3"><h4>STAR 不是八股是钩子</h4><p>每页 00 节的 30 秒版用来开场，2 分钟版用来展开。<b>关键在 R（结果）后面主动挂一个"没解决的问题"</b>——面试官十有八九会顺着你揭的短往下问，那正是你准备最充分的地方。</p></div>
+  <div class="cd c5"><h4>诚实是策略不是美德</h4><p>每页都写了"真问题 / 已知边界"：<span style="color:var(--red)">FPGA 的 rx_sync 未用、OLED 的第三首乐谱没进 Flash、音箱的底噪、气体的三处阻塞</span>。<b>主动交代 + 给出修法</b>，比藏着被挖出来强十倍；说"记不清了，当时主要是反复试参数"也比编一套流程安全。</p></div>
+</div>
+
+<div class="cal def"><span class="t">一天冲刺路线</span>只有半天准备时：① 每页只读 <b>00 开场卡 + 面试专题卡片 + 易错点清单</b>（开"只看面试题"开关，全部收起先自答再展开）；② 把技术栈覆盖表背下来——被问任何一格都知道往哪跳；③ 挑目标岗位的主答项目，把它的<b>追问链</b>读三遍。</div>
+
+<h2>每页的结构<small>五个页面同一套骨架，零依赖单文件，双击即开</small></h2>
+<ol class="howto">
+  <li><b>00 开场</b>：30 秒电梯版 + 2 分钟 STAR + 角色边界——面试前最后看的就是这一节。</li>
+  <li><b>代码精读</b>（页面主体）：代码在前、解释在后，<b>行号与源文件逐行核对</b>；代码里标 ①②③，紧跟编号注解逐条讲；深挖"为什么必须这么做，换个做法会怎样"。</li>
+  <li><b>全程推演</b>：把所有零件串成一次完整运行（PIC 的任务二推演、FPGA 的双车发车、音箱的一帧生命、OLED 的一次按键、气体的 2 秒循环）。</li>
+  <li><b>真问题清单</b>：逐行读代码挖出来的真实缺陷与边界——code review 的展示品。</li>
+  <li><b>面试专题</b>：10–12 张卡片（默认收起，逼自己先想）+ 三条"面试官连环追问链"。</li>
+  <li><b>易错点 + 自测</b>：可以背的清单和必须动笔的计算题。</li>
+</ol>
+<p style="font-size:13.5px;color:var(--ink3)">页面顶部有全局搜索（支持函数名 / 信号名 / 现象关键词）和「只看面试题」速览开关；代码块右上角可一键复制；移动端目录收进左上角抽屉。</p>
+
+<div class="cal warn"><span class="t">使用前必改</span>每页脚注里列了需要按实际情况修正的点：模块作者归属、标定真实做法、推断标注的参数来历。<b>数字和行号都是真的，但"谁做的、怎么做的"必须改成你自己的版本</b>——这些页面是弹药库，扣扳机的必须是你。</div>
+
+<footer>
+  <p>五个页面共约 2600 行源码精读、约 150 KB × 5 零依赖 HTML。事实来源：各项目源文件（逐行核对）+ 项目描述文档 + 代码阅读发现。</p>
+  <p>文件夹：<code>D:\项目整理\面试学习网页\</code> · 01 PIC 小车 / 02 ESP32 音箱 / 03 FPGA 双车 / 04 气体检测 / 05 OLED 装置 / index 总览。</p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var pg = document.getElementById("pg");
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    pg.style.width = (max > 0 ? (h.scrollTop / max * 100) : 0) + "%";
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>
