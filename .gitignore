@@ -1,0 +1,66 @@
+# ---- Quartus / FPGA ----
+db/
+incremental_db/
+output_files/
+*.qws
+*.rpt
+*.summary
+*.smsg
+*.qmsg
+*.done
+*.cmp
+*.jdi
+*.pin
+*.ddb
+*.cdb
+*.hdb
+*.rdb
+*.tdf
+*.cnf
+
+# ---- MPLAB X / XC8 ----
+*.obj
+*.p1
+*.pre
+*.rlf
+*.cof
+*.lst
+*.sdb
+*.sym
+*.hxl
+*.map
+*.o
+*.d
+build/
+dist/
+
+# 注意：.mcp / .mcs / .mcw 是 MPLAB 工程与工作区文件，必须提交，不要忽略
+
+# ---- Arduino / PlatformIO ----
+.pio/
+.pioenvs/
+.piolibdeps/
+*.elf
+*.eep
+
+# ---- 编辑器与系统 ----
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ---- 备份文件 ----
+*.bak
+*.bak[0-9]
+*~
+*.orig
+
+# ---- 临时 ----
+*.tmp
+*.log
+~$*
+__pycache__/
+.tools/
